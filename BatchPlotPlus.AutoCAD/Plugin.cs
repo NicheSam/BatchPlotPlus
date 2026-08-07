@@ -89,16 +89,24 @@ namespace BatchPlotPlus.AutoCAD
             {
                 var validator = PlotSettingsValidator.Current;
                 State.AvailableDevices.Clear();
-                foreach (string name in validator.GetPlotDeviceList())
-                    if (name.IndexOf("PDF", StringComparison.OrdinalIgnoreCase) >= 0) State.AvailableDevices.Add(name);
+                foreach (var item in validator.GetPlotDeviceList())
+                {
+                    var name = item as string;
+                    if (!string.IsNullOrWhiteSpace(name) && name.IndexOf("PDF", StringComparison.OrdinalIgnoreCase) >= 0)
+                        State.AvailableDevices.Add(name);
+                }
                 if (State.AvailableDevices.Count == 0) State.AvailableDevices.Add("DWG To PDF.pc3");
                 if (!State.AvailableDevices.Contains(State.Device))
                     State.Device = State.AvailableDevices.Contains("DWG To PDF.pc3") ? "DWG To PDF.pc3" : State.AvailableDevices[0];
                 State.AvailablePlotStyles.Clear();
                 State.AvailablePlotStyles.Add("");
-                foreach (string name in validator.GetPlotStyleSheetList())
-                    if (BatchLogic.IsPlotStyleCompatible(database.PlotStyleMode, name) &&
+                foreach (var item in validator.GetPlotStyleSheetList())
+                {
+                    var name = item as string;
+                    if (!string.IsNullOrWhiteSpace(name) &&
+                        BatchLogic.IsPlotStyleCompatible(database.PlotStyleMode, name) &&
                         !State.AvailablePlotStyles.Contains(name)) State.AvailablePlotStyles.Add(name);
+                }
                 State.PlotStyle = BatchLogic.SelectCompatiblePlotStyle(database.PlotStyleMode, State.PlotStyle, State.AvailablePlotStyles);
             }
             catch

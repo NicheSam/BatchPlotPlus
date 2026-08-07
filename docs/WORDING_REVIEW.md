@@ -1,4 +1,4 @@
-# BatchPlotPlus 1.3.6 介面用語檢視
+# BatchPlotPlus 1.4.0 介面用語檢視
 
 介面現在固定使用三個不同概念：
 

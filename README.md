@@ -1,6 +1,6 @@
 # BatchPlotPlus
 
-BatchPlotPlus 是供 AutoCAD 2023（Windows 64 位元）使用的繁體中文批次出圖工具。目前版本為 **1.3.6**。
+BatchPlotPlus 是供 AutoCAD 2021–2025（Windows 64 位元）使用的繁體中文批次出圖工具。目前版本為 **1.4.0**。
 
 它把「批次輸出多頁 PDF」與「依圖框拆分 DWG」整合在同一個視窗與 Ribbon 頁籤，並以不儲存來源圖面變更為原則執行暫時性出圖處理。
 
@@ -22,7 +22,7 @@ BatchPlotPlus 是供 AutoCAD 2023（Windows 64 位元）使用的繁體中文批
 
 一般使用者不需要 Visual Studio 或 .NET SDK：
 
-1. 從 [GitHub Releases](https://github.com/NicheSam/BatchPlotPlus/releases/latest) 下載 `BatchPlotPlus-1.3.6-installer.zip`。
+1. 從 [GitHub Releases](https://github.com/NicheSam/BatchPlotPlus/releases/latest) 下載 `BatchPlotPlus-1.4.0-installer.zip`。
 2. 解壓縮全部內容。
 3. 完整關閉 AutoCAD。
 4. 雙擊 `InstallOrUpdate.bat`。
@@ -49,20 +49,15 @@ BatchPlotPlus 是供 AutoCAD 2023（Windows 64 位元）使用的繁體中文批
 需求：
 
 - Windows 10／11 64 位元
-- AutoCAD 2023（R24.2）
-- .NET SDK，可建置 `net48`
+- .NET 8 SDK
+- Windows 上的 .NET Framework 4.8 targeting pack
+- 建置時會從 Autodesk 官方 NuGet 套件取得 AutoCAD 2021 與 2025 API 編譯參考
 
 ```powershell
-dotnet build .\BatchPlotPlus.AutoCAD\BatchPlotPlus.AutoCAD.csproj -c Release
-dotnet build .\LogicTests\BatchPlotPlus.LogicTests.csproj -c Release
-.\LogicTests\bin\Release\net48\BatchPlotPlus.LogicTests.exe
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\BuildRelease.ps1
 ```
 
-將建置完成的 `BatchPlotPlus.AutoCAD.dll` 複製至 `Bundle\BatchPlotPlus.bundle\Contents` 後，可執行：
-
-```powershell
-python .\tools\validate_bundle.py
-```
+`BuildRelease.ps1` 會建立 AutoCAD 2021–2024 使用的 .NET Framework 4.8 組件、AutoCAD 2025 使用的 .NET 8 組件，執行測試與 bundle 驗證，再產生 release 壓縮檔。
 
 ## 專案結構
 
@@ -78,11 +73,13 @@ ui-preview/             PDF／DWG 頁籤畫面
 
 ## 驗證狀態
 
-1.3.6 已通過：
+1.4.0 已通過：
 
-- Release 建置：0 warnings、0 errors。
+- `net48` 與 `net8.0-windows` Release 建置：0 warnings、0 errors。
 - 16 項純邏輯測試。
-- Bundle 結構與 DLL 驗證。
+- R24／R25 bundle 路由、目標框架、DLL 與封裝結構驗證。
+- AutoCAD 2023 Core Console 實際 NETLOAD R24 組件。
+- PDF／DWG 兩頁繁體中文 WinForms 離線介面回歸。
 - AutoCAD CTB 三頁黑白 PDF 測試：三頁彩色像素皆為 0。
 - 實際 14 MB DWG 副本單頁輸出：彩色像素為 0。
 - 暫時性顏色處理前後物件狀態數量一致，未儲存來源 DWG 變更。
@@ -96,6 +93,6 @@ ui-preview/             PDF／DWG 頁籤畫面
 
 ## English
 
-BatchPlotPlus 1.3.6 is a Traditional Chinese AutoCAD 2023 plug-in for batch PDF plotting and copy-safe DWG splitting. It provides a Ribbon tab and a two-tab WinForms interface, supports native multi-page PDF output, filters CTB/STB choices to match the active drawing, and rolls back temporary monochrome overrides after plotting.
+BatchPlotPlus 1.4.0 is a Traditional Chinese plug-in for AutoCAD 2021–2025 on 64-bit Windows. It provides a Ribbon tab and a two-tab WinForms interface for native multi-page PDF output and copy-safe DWG splitting. The bundle automatically loads a .NET Framework 4.8 assembly on AutoCAD 2021–2024 and a .NET 8 assembly on AutoCAD 2025.
 
-Download the installer package from [GitHub Releases](https://github.com/NicheSam/BatchPlotPlus/releases/latest), extract it, close AutoCAD, and run `InstallOrUpdate.bat`. Source builds target .NET Framework 4.8 and reference the AutoCAD 2023 managed assemblies.
+Download the installer package from [GitHub Releases](https://github.com/NicheSam/BatchPlotPlus/releases/latest), extract it, close AutoCAD, and run `InstallOrUpdate.bat`. AutoCAD 2021 and 2025 should still receive version-specific runtime smoke testing because those hosts are not installed in the current development environment.

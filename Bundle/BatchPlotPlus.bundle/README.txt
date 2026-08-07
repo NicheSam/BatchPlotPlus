@@ -1,12 +1,14 @@
-BatchPlotPlus 1.3.6
+BatchPlotPlus 1.4.0
 
 AutoCAD command: BATCHPLOTPLUS
 PDF shortcut: BATCHPDF opens the same window on the PDF tab.
 Legacy DWG shortcut: BATCHWB opens the same window on the Split DWG tab.
-Supported baseline: AutoCAD 2023 or newer, Windows 64-bit.
+Supported hosts: AutoCAD 2021 through AutoCAD 2025, Windows 64-bit.
+AutoCAD 2021-2024 load the R24 .NET Framework 4.8 assembly.
+AutoCAD 2025 loads the R25 .NET 8 assembly.
 
 The original protected BatchPlot.VLX is not modified or replaced.
-The command opens a native .NET Framework 4.8 Traditional Chinese WinForms window with PDF and DWG tabs.
+The command opens a native Traditional Chinese WinForms window with PDF and DWG tabs.
 Supported frame sources: matching attributed blocks, rectangular closed polylines, or closed custom polylines.
 Sheets may be limited by a two-corner range or an explicit selection.
 Page order supports selection order, left-right/top-bottom, top-bottom/left-right, and reverse order.

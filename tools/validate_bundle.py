@@ -7,7 +7,9 @@ import xml.etree.ElementTree as ET
 ROOT = Path(__file__).resolve().parents[1]
 BUNDLE = ROOT / "Bundle" / "BatchPlotPlus.bundle"
 MANIFEST = BUNDLE / "PackageContents.xml"
-DLL = BUNDLE / "Contents" / "BatchPlotPlus.AutoCAD.dll"
+DLL_R24 = BUNDLE / "Contents" / "R24" / "BatchPlotPlus.AutoCAD.dll"
+DLL_R25 = BUNDLE / "Contents" / "R25" / "BatchPlotPlus.AutoCAD.dll"
+LEGACY_DLL = BUNDLE / "Contents" / "BatchPlotPlus.AutoCAD.dll"
 PROJECT = ROOT / "BatchPlotPlus.AutoCAD" / "BatchPlotPlus.AutoCAD.csproj"
 FORM = ROOT / "BatchPlotPlus.AutoCAD" / "BatchPlotForm.cs"
 PLUGIN = ROOT / "BatchPlotPlus.AutoCAD" / "Plugin.cs"
@@ -34,12 +36,27 @@ def main() -> int:
     dwg_text = DWG.read_text(encoding="utf-8")
     ribbon_text = RIBBON.read_text(encoding="utf-8")
 
-    if manifest.attrib.get("AppVersion") != "1.3.6":
-        raise ValueError("Manifest AppVersion is not 1.3.6")
-    require(manifest_text, ['AppType=".Net"', 'ModuleName="./Contents/BatchPlotPlus.AutoCAD.dll"', 'LoadReasons="LoadOnAutoCADStartup"'], "manifest")
+    if manifest.attrib.get("AppVersion") != "1.4.0":
+        raise ValueError("Manifest AppVersion is not 1.4.0")
+    require(manifest_text, [
+        'SeriesMin="R24.0" SeriesMax="R24.3"',
+        'ModuleName="./Contents/R24/BatchPlotPlus.AutoCAD.dll"',
+        'SeriesMin="R25.0" SeriesMax="R25.0"',
+        'ModuleName="./Contents/R25/BatchPlotPlus.AutoCAD.dll"',
+        'LoadReasons="LoadOnAutoCADStartup"',
+    ], "manifest")
+    if manifest_text.count('AppType=".Net"') != 2:
+        raise ValueError("Manifest must contain exactly two version-routed .NET components")
     if "<Commands" in manifest_text or "<Command " in manifest_text or "LoadOnCommandInvocation" in manifest_text:
         raise ValueError("Startup-loaded component must not include command-invocation manifest entries")
-    require(project_text, ["<TargetFramework>net48</TargetFramework>", "<Version>1.3.6</Version>", "<UseWindowsForms>true</UseWindowsForms>", "<Reference Include=\"AdWindows\">"], "project")
+    require(project_text, [
+        "<TargetFrameworks>net48;net8.0-windows</TargetFrameworks>",
+        "<Version>1.4.0</Version>",
+        "<UseWindowsForms>true</UseWindowsForms>",
+        "<UseWPF>true</UseWPF>",
+        '<PackageReference Include="AutoCAD.NET" Version="24.0.0"',
+        '<PackageReference Include="AutoCAD.NET" Version="25.0.1"',
+    ], "project")
     require(plugin_text, ["IExtensionApplication", "RibbonService.Initialize", 'CommandMethod("BATCHPLOTPLUS"', 'CommandMethod("BATCHPDF"', 'CommandMethod("BATCHWB"', "AcApp.ShowModalDialog", "PendingAction.SelectTemplate", "PendingAction.SelectRange", "ResetDocumentSelection", "DwgSplitService.Execute", "AddAllowedClass(typeof(BlockReference)", "AddAllowedClass(typeof(Polyline)"], "command")
     require(ribbon_text, ["ComponentManager.ItemInitialized", "RibbonTab", "RibbonPanel", "RibbonButton", "BatchPlotPlus.RibbonTab", "BATCHPDF ", "BATCHWB ", "return true;", "parameter is RibbonButton button", "button.CommandParameter as string", "SendStringToExecute"], "ribbon")
     parameter_index = ribbon_text.index("CommandParameter = command")
@@ -70,12 +87,25 @@ def main() -> int:
         for marker in ("\ufffd", "Ã", "Â", "å¤", "å¥", "ä¸"):
             if marker in text:
                 raise ValueError(f"Possible mojibake marker: {marker}")
-    if not DLL.is_file() or DLL.stat().st_size < 20_000:
-        raise ValueError("BatchPlotPlus.AutoCAD.dll is missing or unexpectedly small")
-    if DLL.read_bytes()[:2] != b"MZ":
-        raise ValueError("BatchPlotPlus.AutoCAD.dll is not a PE file")
+    for label, dll in (("R24", DLL_R24), ("R25", DLL_R25)):
+        if not dll.is_file() or dll.stat().st_size < 20_000:
+            raise ValueError(f"{label} BatchPlotPlus.AutoCAD.dll is missing or unexpectedly small")
+        if dll.read_bytes()[:2] != b"MZ":
+            raise ValueError(f"{label} BatchPlotPlus.AutoCAD.dll is not a PE file")
+    r24_bytes = DLL_R24.read_bytes()
+    r25_bytes = DLL_R25.read_bytes()
+    if b".NETFramework,Version=v4.8" not in r24_bytes or b".NETCoreApp,Version=v8.0" in r24_bytes:
+        raise ValueError("R24 assembly does not target .NET Framework 4.8")
+    if b".NETCoreApp,Version=v8.0" not in r25_bytes or b".NETFramework,Version=v4.8" in r25_bytes:
+        raise ValueError("R25 assembly does not target .NET 8")
+    if r24_bytes == r25_bytes:
+        raise ValueError("R24 and R25 assemblies must be independently compiled")
+    if LEGACY_DLL.exists():
+        raise ValueError("Obsolete single-version DLL remains in the bundle root")
     print("Bundle validation passed")
-    print(f"DLL bytes: {DLL.stat().st_size}")
+    print(f"R24 DLL bytes: {DLL_R24.stat().st_size}")
+    print(f"R25 DLL bytes: {DLL_R25.stat().st_size}")
+    print("Hosts: AutoCAD 2021-2024 (.NET Framework 4.8) and AutoCAD 2025 (.NET 8)")
     print("UI: Traditional Chinese WinForms")
     print("Output: separate PDF, native multi-page PDF, and copy-safe split DWG")
     return 0

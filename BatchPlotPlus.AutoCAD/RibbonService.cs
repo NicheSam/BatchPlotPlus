@@ -32,7 +32,7 @@ namespace BatchPlotPlus.AutoCAD
             _subscribed = false;
         }
 
-        private static void OnItemInitialized(object sender, RibbonItemEventArgs eventArgs)
+        private static void OnItemInitialized(object? sender, RibbonItemEventArgs eventArgs)
         {
             if (ComponentManager.Ribbon == null) return;
             CreateRibbon();
@@ -77,18 +77,18 @@ namespace BatchPlotPlus.AutoCAD
 
         private sealed class AutoCadCommandHandler : ICommand
         {
-            public event EventHandler CanExecuteChanged
+            public event EventHandler? CanExecuteChanged
             {
                 add { }
                 remove { }
             }
 
-            public bool CanExecute(object parameter)
+            public bool CanExecute(object? parameter)
             {
                 return true;
             }
 
-            public void Execute(object parameter)
+            public void Execute(object? parameter)
             {
                 var document = AcApp.DocumentManager.MdiActiveDocument;
                 var command = parameter is RibbonButton button

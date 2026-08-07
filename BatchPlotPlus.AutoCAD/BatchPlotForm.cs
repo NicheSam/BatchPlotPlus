@@ -45,7 +45,7 @@ namespace BatchPlotPlus.AutoCAD
         public BatchPlotForm(PluginState state)
         {
             _state = state;
-            Text = "批次輸出工具 Plus V1.3.6";
+            Text = "批次輸出工具 Plus V1.4.0";
             Font = new Font("Microsoft JhengHei UI", 9F, FontStyle.Regular, GraphicsUnit.Point);
             StartPosition = FormStartPosition.CenterScreen;
             FormBorderStyle = FormBorderStyle.FixedDialog;
