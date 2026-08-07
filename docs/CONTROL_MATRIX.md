@@ -1,8 +1,8 @@
-# BatchPlotPlus 1.4.0 control-to-behavior and wording review
+# BatchPlotPlus 1.4.1 control-to-behavior and wording review
 
 Every enabled input below has a state write and a downstream consumer. Informational labels are marked as display-only. Unsupported legacy controls were removed instead of being left disabled or unconnected.
 
-The common frame conditions are shared by both tabs. The PDF tab owns page/file settings; the Split DWG tab owns its destination and safety-test limit.
+The common frame conditions are shared by both tabs. The PDF tab owns page/file settings; the Split DWG tab owns its destination, fallback filename prefix, sequence order, and safety-test limit.
 
 | Window item | State/action | Downstream behavior | Review |
 |---|---|---|---|
@@ -37,8 +37,10 @@ The common frame conditions are shared by both tabs. The PDF tab owns page/file 
 | Help | Guidance | Explains the supported flow | Connected |
 | PDF / Split DWG tabs | `OperationMode` | Dispatches to `PlotService.Execute` or `DwgSplitService.Execute` | Connected |
 | DWG output directory | `DwgOutputDirectory` | Creates and saves individual DWG files in this directory | Connected |
+| DWG sequence prefix | `DwgFilePrefix` | Names frames without drawing-name attributes as prefix + sorted one-based index | Connected |
+| DWG sequence order | `SortMode`, `ReverseOrder` | Applies manual, row-first, column-first, or reversed order before assigning fallback numbers | Connected |
 | Test first two frames | `DwgTestFirstTwo` | Limits the sorted DWG frame list to two items | Connected |
-| Start Split DWG | Validation + execute | Requires an attributed block template, model space, and a DWG directory | Connected |
+| Start Split DWG | Validation + execute | Requires a matching block template, model space, and a DWG directory; drawing-name attributes are optional | Connected |
 
 ## Removed after review
 

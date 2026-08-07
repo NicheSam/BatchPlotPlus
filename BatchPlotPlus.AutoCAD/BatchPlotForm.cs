@@ -40,12 +40,17 @@ namespace BatchPlotPlus.AutoCAD
         private readonly Label _mergedNameLabel;
 
         private readonly TextBox _dwgDirectory;
+        private readonly TextBox _dwgFilePrefix;
         private readonly CheckBox _dwgTestFirstTwo;
+        private readonly RadioButton _dwgSortSelection;
+        private readonly RadioButton _dwgSortHorizontal;
+        private readonly RadioButton _dwgSortVertical;
+        private readonly CheckBox _dwgReverseOrder;
 
         public BatchPlotForm(PluginState state)
         {
             _state = state;
-            Text = "批次輸出工具 Plus V1.4.0";
+            Text = "批次輸出工具 Plus V1.4.1";
             Font = new Font("Microsoft JhengHei UI", 9F, FontStyle.Regular, GraphicsUnit.Point);
             StartPosition = FormStartPosition.CenterScreen;
             FormBorderStyle = FormBorderStyle.FixedDialog;
@@ -73,7 +78,7 @@ namespace BatchPlotPlus.AutoCAD
             _rangeStatus = LabelAt(RangeStatus(state.Range.HasValue), 512, 105, 216, 21);
             var setRange = Button("設定搜尋範圍...", 512, 76, 104, 25, (_, __) => Retry(PendingAction.SelectRange));
             var clearRange = Button("搜尋整個模型", 624, 76, 104, 25, (_, __) => Retry(PendingAction.ClearRange));
-            _matchingStatus = LabelAt(MatchingStatus(state.OperationMode == OperationMode.SplitDwg ? state.MatchingNamedFrameCount : state.MatchingFrameCount), 250, 130, 478, 24);
+            _matchingStatus = LabelAt(MatchingStatus(state.MatchingFrameCount), 250, 130, 478, 24);
 
             common.Controls.AddRange(new Control[] {
                 _frameBlock, _framePolyline, _frameCustom, _autoLayer, selectTemplate,
@@ -142,28 +147,38 @@ namespace BatchPlotPlus.AutoCAD
             var dwgRules = Group("拆分規則", 8, 8, 350, 186);
             dwgRules.Controls.AddRange(new Control[] {
                 LabelAt("每個同名圖框各輸出一個 DWG。", 12, 24, 320, 22),
-                LabelAt("檔名：圖名2-圖名1；同名自動加 _2、_3。", 12, 50, 320, 22),
-                LabelAt("原點：圖框包圍框左下角設為 (0,0)。", 12, 76, 320, 22),
-                LabelAt("內容：圖框內及與邊界相交的模型空間物件。", 12, 102, 326, 22),
-                LabelAt("安全：來源物件只讀，不刪除也不移動。", 12, 128, 320, 22)
+                LabelAt("有圖名屬性：使用圖名2-圖名1。", 12, 50, 320, 22),
+                LabelAt("無圖名屬性：使用自訂前綴＋排列順序。", 12, 76, 326, 22),
+                LabelAt("原點：圖框包圍框左下角設為 (0,0)。", 12, 102, 320, 22),
+                LabelAt("內容：圖框內及與邊界相交的模型空間物件。", 12, 128, 326, 22)
             });
             _dwgTestFirstTwo = Check("安全測試：這次只拆前 2 張", 12, 154, 230, state.DwgTestFirstTwo);
             dwgRules.Controls.Add(_dwgTestFirstTwo);
 
-            var dwgOutput = Group("DWG 儲存設定", 366, 8, 362, 132);
+            var dwgOutput = Group("DWG 儲存設定", 366, 8, 362, 158);
             dwgOutput.Controls.Add(LabelAt("儲存資料夾：", 12, 26, 90, 20));
             _dwgDirectory = TextAt(state.DwgOutputDirectory, 12, 51, 270, 23, false);
             var browseDwg = Button("選擇...", 288, 50, 62, 24, BrowseDwgFolder);
-            dwgOutput.Controls.AddRange(new Control[] { _dwgDirectory, browseDwg,
-                LabelAt("完成後會在資料夾建立 BatchWBlock-log.txt。", 12, 85, 330, 22) });
+            dwgOutput.Controls.Add(LabelAt("連號檔名前綴：", 12, 82, 104, 20));
+            _dwgFilePrefix = TextAt(state.DwgFilePrefix, 118, 79, 164, 23, false);
+            dwgOutput.Controls.AddRange(new Control[] { _dwgDirectory, browseDwg, _dwgFilePrefix,
+                LabelAt("例如前綴「圖」會輸出圖1、圖2、圖3。", 12, 108, 330, 22),
+                LabelAt("完成後會建立 BatchWBlock-log.txt。", 12, 132, 330, 20) });
 
-            var dwgNotice = Group("使用限制", 366, 148, 362, 98);
+            var dwgNotice = Group("使用限制", 8, 202, 350, 98);
             dwgNotice.Controls.AddRange(new Control[] {
-                LabelAt("• 僅支援帶有「圖名1」或「圖名2」屬性的圖框圖塊。", 12, 24, 338, 22),
-                LabelAt("• 旋轉圖框會略過並寫入紀錄，不會輸出錯誤範圍。", 12, 49, 338, 22),
-                LabelAt("• 建議先保留安全測試，確認 2 張後再批次處理。", 12, 74, 338, 22)
+                LabelAt("• 圖名屬性可以省略，會改用連號檔名。", 12, 24, 326, 22),
+                LabelAt("• 旋轉圖框會略過並寫入紀錄。", 12, 49, 326, 22),
+                LabelAt("• 建議先測試 2 張，確認後再批次處理。", 12, 74, 326, 22)
             });
-            dwgPage.Controls.AddRange(new Control[] { dwgRules, dwgOutput, dwgNotice });
+
+            var dwgSort = Group("DWG 檔名連號順序", 366, 174, 362, 126);
+            _dwgSortSelection = Radio("依手動選取順序", 12, 22, 180, state.SortMode == SortMode.Selection);
+            _dwgSortHorizontal = Radio("逐列：左→右、上→下", 12, 49, 180, state.SortMode == SortMode.LeftRightTopBottom);
+            _dwgSortVertical = Radio("逐欄：上→下、左→右", 12, 76, 180, state.SortMode == SortMode.TopBottomLeftRight);
+            _dwgReverseOrder = Check("反轉順序", 204, 22, 100, state.ReverseOrder);
+            dwgSort.Controls.AddRange(new Control[] { _dwgSortSelection, _dwgSortHorizontal, _dwgSortVertical, _dwgReverseOrder });
+            dwgPage.Controls.AddRange(new Control[] { dwgRules, dwgOutput, dwgNotice, dwgSort });
 
             _start = Button("開始輸出 PDF", 430, 560, 120, 28, Accept);
             var cancel = Button("取消", 562, 560, 88, 28, (_, __) => { DialogResult = DialogResult.Cancel; Close(); });
@@ -184,7 +199,7 @@ namespace BatchPlotPlus.AutoCAD
             if (split && !_frameBlock.Checked) _frameBlock.Checked = true;
             _framePolyline.Enabled = !split;
             _frameCustom.Enabled = !split;
-            _matchingStatus.Text = MatchingStatus(split ? _state.MatchingNamedFrameCount : _state.MatchingFrameCount);
+            _matchingStatus.Text = MatchingStatus(_state.MatchingFrameCount);
         }
 
         private void FrameModeChanged(object? sender, EventArgs e)
@@ -227,7 +242,7 @@ namespace BatchPlotPlus.AutoCAD
                 Warn("尚未指定 PDF 儲存資料夾。");
                 return;
             }
-            if (_state.OperationMode == OperationMode.Pdf && _state.SortMode == SortMode.Selection && _state.ExplicitSheetHandles.Count == 0)
+            if (_state.SortMode == SortMode.Selection && _state.ExplicitSheetHandles.Count == 0)
             {
                 Warn("若要依手動選取順序排列，請先按「指定要處理的圖框...」。");
                 return;
@@ -262,14 +277,18 @@ namespace BatchPlotPlus.AutoCAD
             _state.Copies = (int)_copies.Value;
             _state.FitToPaper = _fit.Checked;
             _state.FixedScale = (double)_scale.Value;
-            _state.SortMode = _sortSelection.Checked ? SortMode.Selection : (_sortVertical.Checked ? SortMode.TopBottomLeftRight : SortMode.LeftRightTopBottom);
-            _state.ReverseOrder = _reverseOrder.Checked;
+            var splitDwg = _tabs.SelectedIndex == 1;
+            _state.SortMode = splitDwg
+                ? (_dwgSortSelection.Checked ? SortMode.Selection : (_dwgSortVertical.Checked ? SortMode.TopBottomLeftRight : SortMode.LeftRightTopBottom))
+                : (_sortSelection.Checked ? SortMode.Selection : (_sortVertical.Checked ? SortMode.TopBottomLeftRight : SortMode.LeftRightTopBottom));
+            _state.ReverseOrder = splitDwg ? _dwgReverseOrder.Checked : _reverseOrder.Checked;
             _state.AutoRotate = _autoRotate.Checked;
             _state.ReverseOrientation = _reverseOrientation.Checked;
             _state.CenterPlot = _centerPlot.Checked;
             _state.OutputDirectory = _pdfDirectory.Text.Trim();
             _state.MergedFileName = _mergedName.Text.Trim();
             _state.DwgOutputDirectory = _dwgDirectory.Text.Trim();
+            _state.DwgFilePrefix = string.IsNullOrWhiteSpace(_dwgFilePrefix.Text) ? "圖" : _dwgFilePrefix.Text.Trim();
             _state.DwgTestFirstTwo = _dwgTestFirstTwo.Checked;
         }
 
@@ -285,7 +304,7 @@ namespace BatchPlotPlus.AutoCAD
         private void ShowHelp(object? sender, EventArgs e)
         {
             var text = _tabs.SelectedIndex == 1
-                ? "先選取帶有圖名屬性的圖框圖塊，設定範圍與資料夾，再按「開始拆分 DWG」。第一次建議只拆前 2 張。"
+                ? "先選取代表性的圖框圖塊，設定範圍、連號前綴、順序與資料夾，再按「開始拆分 DWG」。沒有圖名屬性時會使用前綴加連號。第一次建議只拆前 2 張。"
                 : "先設定共用圖框條件，再設定 PDF 檔案、頁面與排列順序，最後按「開始輸出 PDF」。";
             MessageBox.Show(text, "批次輸出工具 Plus");
         }

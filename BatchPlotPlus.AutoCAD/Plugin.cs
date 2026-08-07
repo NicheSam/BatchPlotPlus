@@ -165,7 +165,7 @@ namespace BatchPlotPlus.AutoCAD
                 }
                 var result = editor.GetEntity(options);
                 if (result.Status != PromptStatus.OK) return;
-                if (!PlotService.TryValidateTemplate(database, result.ObjectId, State.FrameMode, State.OperationMode == OperationMode.SplitDwg, out var error))
+                if (!PlotService.TryValidateTemplate(database, result.ObjectId, State.FrameMode, out var error))
                 {
                     editor.WriteMessage("\n" + error);
                     return;

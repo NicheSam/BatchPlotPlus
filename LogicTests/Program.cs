@@ -26,6 +26,11 @@ internal static class Program
 
         var safe = BatchLogic.SafeFileName("A:B/C*D?");
         Check(safe.IndexOfAny(System.IO.Path.GetInvalidFileNameChars()) < 0, "filename sanitization");
+        Check(BatchLogic.NumberedFileBase("圖", 3) == "圖3", "default numbered DWG filename");
+        Check(BatchLogic.NumberedFileBase("消防-", 12) == "消防-12", "custom numbered DWG filename");
+        Check(BatchLogic.NumberedFileBase("", 0) == "圖1", "blank prefix and index fallback");
+        Check(BatchLogic.DwgFileBase("F2-F1", true, "圖", 4) == "F2-F1", "preserve attribute DWG filename");
+        Check(BatchLogic.DwgFileBase("drawing-04", false, "圖", 4) == "圖4", "replace non-attribute fallback after sorting");
 
         var documentState = new PluginState { TemplateHandle = "AB", TemplateLabel = "old", MatchingFrameCount = 9, MatchingNamedFrameCount = 8 };
         documentState.ExplicitSheetHandles.Add("CD");

@@ -36,8 +36,8 @@ def main() -> int:
     dwg_text = DWG.read_text(encoding="utf-8")
     ribbon_text = RIBBON.read_text(encoding="utf-8")
 
-    if manifest.attrib.get("AppVersion") != "1.4.0":
-        raise ValueError("Manifest AppVersion is not 1.4.0")
+    if manifest.attrib.get("AppVersion") != "1.4.1":
+        raise ValueError("Manifest AppVersion is not 1.4.1")
     require(manifest_text, [
         'SeriesMin="R24.0" SeriesMax="R24.3"',
         'ModuleName="./Contents/R24/BatchPlotPlus.AutoCAD.dll"',
@@ -51,7 +51,7 @@ def main() -> int:
         raise ValueError("Startup-loaded component must not include command-invocation manifest entries")
     require(project_text, [
         "<TargetFrameworks>net48;net8.0-windows</TargetFrameworks>",
-        "<Version>1.4.0</Version>",
+        "<Version>1.4.1</Version>",
         "<UseWindowsForms>true</UseWindowsForms>",
         "<UseWPF>true</UseWPF>",
         '<PackageReference Include="AutoCAD.NET" Version="24.0.0"',
@@ -73,8 +73,10 @@ def main() -> int:
     if plot_text.count("ResolveMedia(document.Database, state)") != 1:
         raise ValueError("Plot media must be resolved exactly once in the batch entry point")
     require(plot_text, ["PlotPages(document, state, frames, output, media)", "PlotPages(document, state, new List<FrameInfo> { frame }, output, media)"], "shared plot media")
-    require(logic_text, ["WildcardMatch", "GroupAndSort", "SafeFileName", "ProgressPercent", "IsPlotStyleCompatible", "SelectCompatiblePlotStyle"], "batch logic")
-    require(dwg_text, ["SelectCrossingPolygon", "Wblock(ids", "SaveAs(output", "DwgTestFirstTwo", "BatchWBlock-log.txt", "SetCurrentView(originalView)", "frameTimer.Elapsed"], "DWG split")
+    require(logic_text, ["WildcardMatch", "GroupAndSort", "SafeFileName", "NumberedFileBase", "DwgFileBase", "ProgressPercent", "IsPlotStyleCompatible", "SelectCompatiblePlotStyle"], "batch logic")
+    require(dwg_text, ["SelectCrossingPolygon", "Wblock(ids", "SaveAs(output", "DwgTestFirstTwo", "DwgFilePrefix", "DwgFileBase", "BatchWBlock-log.txt", "SetCurrentView(originalView)", "frameTimer.Elapsed"], "DWG split")
+    if ".Where(frame => frame.HasDrawingName)" in dwg_text:
+        raise ValueError("DWG split still excludes frames without drawing-name attributes")
     if ".Erase(" in dwg_text or "Erase(true" in dwg_text:
         raise ValueError("DWG split must not erase source entities")
     if ".Enabled = false" in form_text or re.search(r"Button\([^\n]+, null\)", form_text):

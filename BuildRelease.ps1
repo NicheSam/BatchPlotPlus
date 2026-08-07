@@ -6,8 +6,8 @@ $logicProject = Join-Path $projectRoot "LogicTests\BatchPlotPlus.LogicTests.cspr
 $bundle = Join-Path $projectRoot "Bundle\BatchPlotPlus.bundle"
 $releaseRoot = Join-Path $projectRoot "release"
 $releaseBundle = Join-Path $releaseRoot "BatchPlotPlus.bundle"
-$releaseZip = Join-Path $releaseRoot "BatchPlotPlus-1.4.0.zip"
-$installerZip = Join-Path $releaseRoot "BatchPlotPlus-1.4.0-installer.zip"
+$releaseZip = Join-Path $releaseRoot "BatchPlotPlus-1.4.1.zip"
+$installerZip = Join-Path $releaseRoot "BatchPlotPlus-1.4.1-installer.zip"
 $installerStage = Join-Path $releaseRoot "_installer"
 $r24Output = Join-Path $projectRoot "BatchPlotPlus.AutoCAD\bin\Release\net48\BatchPlotPlus.AutoCAD.dll"
 $r25Output = Join-Path $projectRoot "BatchPlotPlus.AutoCAD\bin\Release\net8.0-windows\BatchPlotPlus.AutoCAD.dll"
@@ -46,6 +46,6 @@ if (Test-Path -LiteralPath $installerZip) { Remove-Item -LiteralPath $installerZ
 Compress-Archive -Path (Join-Path $installerStage "*") -DestinationPath $installerZip -CompressionLevel Optimal
 Remove-Item -LiteralPath $installerStage -Recurse -Force
 
-Write-Output "BatchPlotPlus 1.4.0 release created."
+Write-Output "BatchPlotPlus 1.4.1 release created."
 Write-Output $releaseZip
 Write-Output $installerZip

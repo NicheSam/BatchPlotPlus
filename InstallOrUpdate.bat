@@ -1,6 +1,6 @@
 @echo off
 setlocal EnableExtensions
-title BatchPlotPlus 1.4.0 Installer
+title BatchPlotPlus 1.4.1 Installer
 
 set "SOURCE=%~dp0release\BatchPlotPlus.bundle"
 set "TARGET=%APPDATA%\Autodesk\ApplicationPlugins\BatchPlotPlus.bundle"
@@ -101,9 +101,9 @@ if errorlevel 1 (
   exit /b 5
 )
 
-findstr /C:"AppVersion=\"1.4.0\"" "%TARGET%\PackageContents.xml" >NUL
+findstr /C:"AppVersion=\"1.4.1\"" "%TARGET%\PackageContents.xml" >NUL
 if errorlevel 1 (
-  echo ERROR: The deployed manifest is not version 1.4.0.
+  echo ERROR: The deployed manifest is not version 1.4.1.
   pause
   exit /b 6
 )
@@ -121,7 +121,7 @@ if errorlevel 1 (
 )
 
 echo.
-echo BatchPlotPlus 1.4.0 was deployed successfully.
+echo BatchPlotPlus 1.4.1 was deployed successfully.
 echo Supported hosts: AutoCAD 2021 through AutoCAD 2025, Windows 64-bit.
 echo Target: %TARGET%
 echo Restart AutoCAD, then use the Batch Plot Tools ribbon tab.

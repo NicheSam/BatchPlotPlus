@@ -1,6 +1,6 @@
 # BatchPlotPlus
 
-BatchPlotPlus 是供 AutoCAD 2021–2025（Windows 64 位元）使用的繁體中文批次出圖工具。目前版本為 **1.4.0**。
+BatchPlotPlus 是供 AutoCAD 2021–2025（Windows 64 位元）使用的繁體中文批次出圖工具。目前版本為 **1.4.1**。
 
 它把「批次輸出多頁 PDF」與「依圖框拆分 DWG」整合在同一個視窗與 Ribbon 頁籤，並以不儲存來源圖面變更為原則執行暫時性出圖處理。
 
@@ -18,11 +18,17 @@ BatchPlotPlus 是供 AutoCAD 2021–2025（Windows 64 位元）使用的繁體�
 - 依圖框批次拆分 DWG，並提供先測試前 2 張的安全選項。
 - 自動載入「批次輸出工具」Ribbon 頁籤。
 
+## 1.4.1 更新
+
+- 有完整「圖名1／圖名2」屬性時，繼續使用 圖名2-圖名1 命名。
+- 圖框屬性不足或沒有屬性時，可使用自訂前綴和排序後連號，例如 圖1.dwg、圖2.dwg、圖3.dwg。
+- DWG 頁籤可獨立設定手動選取、逐列、逐欄及反轉順序。
+
 ## 安裝
 
 一般使用者不需要 Visual Studio 或 .NET SDK：
 
-1. 從 [GitHub Releases](https://github.com/NicheSam/BatchPlotPlus/releases/latest) 下載 `BatchPlotPlus-1.4.0-installer.zip`。
+1. 從 [GitHub Releases](https://github.com/NicheSam/BatchPlotPlus/releases/latest) 下載 `BatchPlotPlus-1.4.1-installer.zip`。
 2. 解壓縮全部內容。
 3. 完整關閉 AutoCAD。
 4. 雙擊 `InstallOrUpdate.bat`。
@@ -73,10 +79,10 @@ ui-preview/             PDF／DWG 頁籤畫面
 
 ## 驗證狀態
 
-1.4.0 已通過：
+1.4.1 已通過：
 
 - `net48` 與 `net8.0-windows` Release 建置：0 warnings、0 errors。
-- 16 項純邏輯測試。
+- 21 項純邏輯測試。
 - R24／R25 bundle 路由、目標框架、DLL 與封裝結構驗證。
 - AutoCAD 2023 Core Console 實際 NETLOAD R24 組件。
 - PDF／DWG 兩頁繁體中文 WinForms 離線介面回歸。
@@ -93,6 +99,8 @@ ui-preview/             PDF／DWG 頁籤畫面
 
 ## English
 
-BatchPlotPlus 1.4.0 is a Traditional Chinese plug-in for AutoCAD 2021–2025 on 64-bit Windows. It provides a Ribbon tab and a two-tab WinForms interface for native multi-page PDF output and copy-safe DWG splitting. The bundle automatically loads a .NET Framework 4.8 assembly on AutoCAD 2021–2024 and a .NET 8 assembly on AutoCAD 2025.
+BatchPlotPlus 1.4.1 is a Traditional Chinese plug-in for AutoCAD 2021–2025 on 64-bit Windows. It provides a Ribbon tab and a two-tab WinForms interface for native multi-page PDF output and copy-safe DWG splitting. The bundle automatically loads a .NET Framework 4.8 assembly on AutoCAD 2021–2024 and a .NET 8 assembly on AutoCAD 2025.
+
+Version 1.4.1 adds numbered fallback DWG names with a configurable prefix when title-block attributes are missing. Existing attribute-based names remain unchanged.
 
 Download the installer package from [GitHub Releases](https://github.com/NicheSam/BatchPlotPlus/releases/latest), extract it, close AutoCAD, and run `InstallOrUpdate.bat`. AutoCAD 2021 and 2025 should still receive version-specific runtime smoke testing because those hosts are not installed in the current development environment.

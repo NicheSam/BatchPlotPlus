@@ -1,4 +1,4 @@
-BatchPlotPlus 1.4.0
+BatchPlotPlus 1.4.1
 
 AutoCAD command: BATCHPLOTPLUS
 PDF shortcut: BATCHPDF opens the same window on the PDF tab.
@@ -17,6 +17,7 @@ The Traditional Chinese UI distinguishes CAD frames, PDF pages, and PDF files an
 
 The Split DWG tab ports the BatchWBlock v1.2 workflow into the same .NET window:
 - attributed block filenames use 圖名2-圖名1;
+- frames without drawing-name attributes use a user-defined prefix and sorted sequence number, such as 圖1, 圖2, 圖3;
 - each output origin is the frame bounding-box lower-left corner;
 - crossing model-space objects are copied with Database.Wblock and the source drawing is not erased or moved;
 - duplicate filenames receive _2, _3, and so on;

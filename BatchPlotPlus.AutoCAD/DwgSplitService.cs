@@ -17,17 +17,18 @@ namespace BatchPlotPlus.AutoCAD
         public static void Execute(Document document, PluginState state)
         {
             if (state.FrameMode != FrameMode.Block)
-                throw new InvalidOperationException("拆分 DWG 目前只支援帶圖名屬性的圖框圖塊。");
+                throw new InvalidOperationException("拆分 DWG 目前只支援圖框圖塊。");
             if (!document.Database.TileMode)
                 throw new InvalidOperationException("請先切換到模型空間，再執行拆分 DWG。");
 
             Directory.CreateDirectory(state.DwgOutputDirectory);
-            var selectedFrames = PlotService.CollectFrames(document.Database, state);
-            var frames = selectedFrames.Where(frame => frame.HasDrawingName).ToList();
-            frames = PlotService.SortFrames(frames, SortMode.LeftRightTopBottom, false);
+            var frames = PlotService.SortFrames(PlotService.CollectFrames(document.Database, state), state);
+            for (var index = 0; index < frames.Count; index++)
+                frames[index].FileBase = BatchLogic.DwgFileBase(
+                    frames[index].FileBase, frames[index].HasDrawingName, state.DwgFilePrefix, index + 1);
             if (state.DwgTestFirstTwo) frames = frames.Take(2).ToList();
             if (frames.Count == 0)
-                throw new InvalidOperationException("找不到帶有「圖名1」或「圖名2」內容的圖框。");
+                throw new InvalidOperationException("找不到符合圖框樣板、搜尋圖層與範圍的圖框。");
 
             var allFrameIds = new HashSet<ObjectId>(PlotService.CollectFrames(document.Database, state, true).Select(frame => frame.Id));
             var log = new List<string>

@@ -32,6 +32,19 @@ namespace BatchPlotPlus.AutoCAD
             return string.IsNullOrWhiteSpace(result) ? "圖面" : result;
         }
 
+        public static string NumberedFileBase(string prefix, int oneBasedIndex)
+        {
+            var effectivePrefix = string.IsNullOrWhiteSpace(prefix) ? "圖" : SafeFileName(prefix);
+            return effectivePrefix + Math.Max(1, oneBasedIndex).ToString(System.Globalization.CultureInfo.InvariantCulture);
+        }
+
+        public static string DwgFileBase(string attributeFileBase, bool hasDrawingName, string prefix, int oneBasedIndex)
+        {
+            return hasDrawingName && !string.IsNullOrWhiteSpace(attributeFileBase)
+                ? attributeFileBase
+                : NumberedFileBase(prefix, oneBasedIndex);
+        }
+
         public static List<SheetOrderItem> Sort(IList<SheetOrderItem> items, SortMode mode, bool reverse)
         {
             List<SheetOrderItem> result;

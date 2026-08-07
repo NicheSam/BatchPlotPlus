@@ -48,6 +48,7 @@ namespace BatchPlotPlus.AutoCAD
         public string OutputDirectory { get; set; } = "";
         public string MergedFileName { get; set; } = "合併圖面";
         public string DwgOutputDirectory { get; set; } = "";
+        public string DwgFilePrefix { get; set; } = "圖";
         public bool DwgTestFirstTwo { get; set; } = true;
         public PendingAction PendingAction { get; set; }
         public List<string> AvailableDevices { get; } = new List<string> { "DWG To PDF.pc3" };

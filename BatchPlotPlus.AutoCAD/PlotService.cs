@@ -30,18 +30,13 @@ namespace BatchPlotPlus.AutoCAD
             }
         }
 
-        internal static bool TryValidateTemplate(Database database, ObjectId id, FrameMode mode, bool requireDrawingName, out string error)
+        internal static bool TryValidateTemplate(Database database, ObjectId id, FrameMode mode, out string error)
         {
             using (var transaction = database.TransactionManager.StartOpenCloseTransaction())
             {
                 var entity = transaction.GetObject(id, OpenMode.ForRead) as Entity;
-                if (mode == FrameMode.Block && entity is BlockReference block)
+                if (mode == FrameMode.Block && entity is BlockReference)
                 {
-                    if (requireDrawingName && !HasDrawingName(block, transaction))
-                    {
-                        error = "拆分 DWG 的圖框樣板必須包含「圖名1」或「圖名2」屬性。";
-                        return false;
-                    }
                     error = "";
                     return true;
                 }
