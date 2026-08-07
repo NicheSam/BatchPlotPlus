@@ -1,0 +1,2 @@
+BatchPlotPlus 1.3.6 does not redistribute third-party libraries.
+AutoCAD managed assemblies are referenced from the user's installed AutoCAD 2023 product and are not included in this bundle.

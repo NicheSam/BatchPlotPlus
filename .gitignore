@@ -1,0 +1,32 @@
+# Visual Studio and .NET build output
+bin/
+obj/
+.vs/
+*.user
+*.suo
+*.pdb
+
+# Generated release artifacts
+release/
+*.dll
+*.zip
+
+# Runtime, logs, and caches
+*.log
+*.tmp
+*.cache
+__pycache__/
+.pytest_cache/
+
+# Local environment and credentials
+.env
+.env.*
+*.pem
+*.p12
+*.pfx
+
+# AutoCAD temporary files
+*.bak
+*.dwl
+*.dwl2
+*.sv$

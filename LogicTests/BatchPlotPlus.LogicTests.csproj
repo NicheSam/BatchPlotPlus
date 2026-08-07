@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net48</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <AssemblyName>BatchPlotPlus.LogicTests</AssemblyName>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="..\BatchPlotPlus.AutoCAD\BatchLogic.cs" Link="BatchLogic.cs" />
+    <Compile Include="..\BatchPlotPlus.AutoCAD\Models.cs" Link="Models.cs" />
+  </ItemGroup>
+</Project>
