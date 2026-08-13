@@ -1,33 +1,39 @@
 @echo off
 setlocal EnableExtensions
-title BatchPlotPlus 1.4.1 Installer
+title BatchPlotPlus 1.4.2 Installer
 
 set "SOURCE=%~dp0release\BatchPlotPlus.bundle"
-set "TARGET=%APPDATA%\Autodesk\ApplicationPlugins\BatchPlotPlus.bundle"
+set "PLUGIN_ROOT=%ProgramFiles%\Autodesk\ApplicationPlugins"
+set "TARGET=%PLUGIN_ROOT%\BatchPlotPlus.bundle"
+set "STAGE=%PLUGIN_ROOT%\BatchPlotPlus.bundle.new"
+set "LEGACY_USER=%APPDATA%\Autodesk\ApplicationPlugins\BatchPlotPlus.bundle"
+set "LEGACY_ALL=%ProgramData%\Autodesk\ApplicationPlugins\BatchPlotPlus.bundle"
 
-if not defined APPDATA (
-  echo ERROR: APPDATA is not available.
-  pause
-  exit /b 1
+powershell.exe -NoProfile -Command "$p=[Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent(); if($p.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)){exit 0}else{exit 1}" >NUL 2>NUL
+if errorlevel 1 (
+  echo Administrator permission is required to install to AutoCAD's trusted plug-in folder.
+  powershell.exe -NoProfile -Command "Start-Process -FilePath '%~f0' -Verb RunAs"
+  if errorlevel 1 (
+    echo ERROR: Elevation was cancelled or failed.
+    pause
+    exit /b 1
+  )
+  exit /b 0
 )
 
 if not exist "%SOURCE%\PackageContents.xml" (
-  echo ERROR: Release manifest was not found:
+  echo ERROR: Release manifest was not found. Extract the entire installer ZIP first.
   echo %SOURCE%\PackageContents.xml
   pause
   exit /b 2
 )
-
 if not exist "%SOURCE%\Contents\R24\BatchPlotPlus.AutoCAD.dll" (
-  echo ERROR: AutoCAD 2021-2024 release DLL was not found:
-  echo %SOURCE%\Contents\R24\BatchPlotPlus.AutoCAD.dll
+  echo ERROR: AutoCAD 2021-2024 DLL was not found. Extract the entire installer ZIP first.
   pause
   exit /b 2
 )
-
 if not exist "%SOURCE%\Contents\R25\BatchPlotPlus.AutoCAD.dll" (
-  echo ERROR: AutoCAD 2025 release DLL was not found:
-  echo %SOURCE%\Contents\R25\BatchPlotPlus.AutoCAD.dll
+  echo ERROR: AutoCAD 2025 DLL was not found. Extract the entire installer ZIP first.
   pause
   exit /b 2
 )
@@ -40,92 +46,47 @@ if not errorlevel 1 (
   exit /b 3
 )
 
-if not exist "%TARGET%\Contents\R24" (
-  mkdir "%TARGET%\Contents\R24"
-  if errorlevel 1 (
-    echo ERROR: Could not create the target folder:
-    echo %TARGET%\Contents\R24
-    goto :copy_failed
-  )
-)
-if not exist "%TARGET%\Contents\R25" (
-  mkdir "%TARGET%\Contents\R25"
-  if errorlevel 1 (
-    echo ERROR: Could not create the target folder:
-    echo %TARGET%\Contents\R25
-    goto :copy_failed
-  )
+powershell.exe -NoProfile -Command "Get-ChildItem -LiteralPath '%SOURCE%' -Recurse -File -ErrorAction Stop | Unblock-File" >NUL 2>NUL
+if errorlevel 1 (
+  echo WARNING: Download blocking could not be cleared from every source file.
 )
 
-copy /Y "%SOURCE%\README.txt" "%TARGET%\README.txt" >NUL
-if errorlevel 1 (
-  echo ERROR: Could not copy README.txt.
-  goto :copy_failed
-)
-copy /Y "%SOURCE%\THIRD_PARTY_NOTICES.txt" "%TARGET%\THIRD_PARTY_NOTICES.txt" >NUL
-if errorlevel 1 (
-  echo ERROR: Could not copy THIRD_PARTY_NOTICES.txt.
-  goto :copy_failed
-)
-copy /Y "%SOURCE%\Contents\R24\BatchPlotPlus.AutoCAD.dll" "%TARGET%\Contents\R24\BatchPlotPlus.AutoCAD.dll" >NUL
-if errorlevel 1 (
-  echo ERROR: Could not copy the AutoCAD 2021-2024 DLL.
-  goto :copy_failed
-)
-copy /Y "%SOURCE%\Contents\R25\BatchPlotPlus.AutoCAD.dll" "%TARGET%\Contents\R25\BatchPlotPlus.AutoCAD.dll" >NUL
-if errorlevel 1 (
-  echo ERROR: Could not copy the AutoCAD 2025 DLL.
-  goto :copy_failed
-)
-copy /Y "%SOURCE%\PackageContents.xml" "%TARGET%\PackageContents.xml" >NUL
-if errorlevel 1 (
-  echo ERROR: Could not activate the new PackageContents.xml.
-  goto :copy_failed
-)
+if not exist "%PLUGIN_ROOT%" mkdir "%PLUGIN_ROOT%"
+if errorlevel 1 goto :copy_failed
+if exist "%STAGE%" rmdir /S /Q "%STAGE%"
+xcopy "%SOURCE%" "%STAGE%\" /E /I /Y /Q >NUL
+if errorlevel 1 goto :copy_failed
 
-del /Q "%TARGET%\Contents\BatchPlotPlus.lsp" 2>NUL
-del /Q "%TARGET%\Contents\BatchPlotPlus.dcl" 2>NUL
-del /Q "%TARGET%\Contents\PdfMerge.exe" 2>NUL
-del /Q "%TARGET%\Contents\BatchPlotPlus.AutoCAD.dll" 2>NUL
+fc /B "%SOURCE%\Contents\R24\BatchPlotPlus.AutoCAD.dll" "%STAGE%\Contents\R24\BatchPlotPlus.AutoCAD.dll" >NUL
+if errorlevel 1 goto :verify_failed
+fc /B "%SOURCE%\Contents\R25\BatchPlotPlus.AutoCAD.dll" "%STAGE%\Contents\R25\BatchPlotPlus.AutoCAD.dll" >NUL
+if errorlevel 1 goto :verify_failed
+findstr /C:"AppVersion=\"1.4.2\"" "%STAGE%\PackageContents.xml" >NUL
+if errorlevel 1 goto :verify_failed
+findstr /C:"LoadOnAutoCADStartup=\"True\"" "%STAGE%\PackageContents.xml" >NUL
+if errorlevel 1 goto :verify_failed
+findstr /C:"LoadOnCommandInvocation=\"True\"" "%STAGE%\PackageContents.xml" >NUL
+if errorlevel 1 goto :verify_failed
 
+if exist "%TARGET%" rmdir /S /Q "%TARGET%"
+move "%STAGE%" "%TARGET%" >NUL
+if errorlevel 1 goto :copy_failed
+
+if defined APPDATA if exist "%LEGACY_USER%" rmdir /S /Q "%LEGACY_USER%"
+if defined ProgramData if exist "%LEGACY_ALL%" rmdir /S /Q "%LEGACY_ALL%"
+
+powershell.exe -NoProfile -Command "Get-ChildItem -LiteralPath '%TARGET%' -Recurse -File -ErrorAction Stop | Unblock-File" >NUL 2>NUL
 fc /B "%SOURCE%\Contents\R24\BatchPlotPlus.AutoCAD.dll" "%TARGET%\Contents\R24\BatchPlotPlus.AutoCAD.dll" >NUL
-if errorlevel 1 (
-  echo ERROR: Deployed AutoCAD 2021-2024 DLL does not match the release DLL.
-  pause
-  exit /b 5
-)
+if errorlevel 1 goto :verify_failed
 fc /B "%SOURCE%\Contents\R25\BatchPlotPlus.AutoCAD.dll" "%TARGET%\Contents\R25\BatchPlotPlus.AutoCAD.dll" >NUL
-if errorlevel 1 (
-  echo ERROR: Deployed AutoCAD 2025 DLL does not match the release DLL.
-  pause
-  exit /b 5
-)
-
-findstr /C:"AppVersion=\"1.4.1\"" "%TARGET%\PackageContents.xml" >NUL
-if errorlevel 1 (
-  echo ERROR: The deployed manifest is not version 1.4.1.
-  pause
-  exit /b 6
-)
-findstr /C:"ModuleName=\"./Contents/R24/BatchPlotPlus.AutoCAD.dll\"" "%TARGET%\PackageContents.xml" >NUL
-if errorlevel 1 (
-  echo ERROR: The deployed manifest does not route AutoCAD 2021-2024 correctly.
-  pause
-  exit /b 6
-)
-findstr /C:"ModuleName=\"./Contents/R25/BatchPlotPlus.AutoCAD.dll\"" "%TARGET%\PackageContents.xml" >NUL
-if errorlevel 1 (
-  echo ERROR: The deployed manifest does not route AutoCAD 2025 correctly.
-  pause
-  exit /b 6
-)
+if errorlevel 1 goto :verify_failed
 
 echo.
-echo BatchPlotPlus 1.4.1 was deployed successfully.
-echo Supported hosts: AutoCAD 2021 through AutoCAD 2025, Windows 64-bit.
-echo Target: %TARGET%
-echo Restart AutoCAD, then use the Batch Plot Tools ribbon tab.
-echo Fallback commands: BATCHPLOTPLUS, BATCHPDF, or BATCHWB.
+echo BatchPlotPlus 1.4.2 was deployed successfully.
+echo Trusted target: %TARGET%
+echo Restart AutoCAD. The Batch Plot Tools ribbon tab should appear.
+echo Fallback commands: BATCHPLOTPLUS, BATCHPDF, BATCHWB, BATCHPLOTDIAG.
+echo If loading still fails, run DiagnoseInstallation.bat and send the report.
 echo.
 pause
 exit /b 0
@@ -134,5 +95,12 @@ exit /b 0
 echo ERROR: Deployment failed while copying files.
 echo Source: %SOURCE%
 echo Target: %TARGET%
+if exist "%STAGE%" rmdir /S /Q "%STAGE%"
 pause
 exit /b 4
+
+:verify_failed
+echo ERROR: The staged or deployed files failed verification.
+if exist "%STAGE%" rmdir /S /Q "%STAGE%"
+pause
+exit /b 5

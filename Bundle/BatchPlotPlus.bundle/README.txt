@@ -1,8 +1,9 @@
-BatchPlotPlus 1.4.1
+BatchPlotPlus 1.4.2
 
 AutoCAD command: BATCHPLOTPLUS
 PDF shortcut: BATCHPDF opens the same window on the PDF tab.
 Legacy DWG shortcut: BATCHWB opens the same window on the Split DWG tab.
+Diagnostic command: BATCHPLOTDIAG reports the loaded DLL, version, and AutoCAD load settings.
 Supported hosts: AutoCAD 2021 through AutoCAD 2025, Windows 64-bit.
 AutoCAD 2021-2024 load the R24 .NET Framework 4.8 assembly.
 AutoCAD 2025 loads the R25 .NET 8 assembly.
@@ -25,7 +26,8 @@ The Split DWG tab ports the BatchWBlock v1.2 workflow into the same .NET window:
 - the safety-test option limits one run to the first two frames.
 Attributed block filenames use 圖名2-圖名1 when those tags exist.
 
-The component loads when AutoCAD starts and creates the Batch Plot Tools ribbon tab.
+The component loads when AutoCAD starts and also declares command-triggered loading as a fallback.
+Ribbon initialization errors are logged without disabling the command methods.
 The ribbon contains Output PDF and Split DWG buttons; commands remain available as fallbacks.
 Ribbon command handlers read the command from AutoCAD's RibbonButton event parameter.
 Model-space frame extents are converted from WCS to the DCS coordinates required by AutoCAD's plot-window API.

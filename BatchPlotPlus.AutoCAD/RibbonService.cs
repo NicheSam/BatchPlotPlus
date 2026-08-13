@@ -23,6 +23,7 @@ namespace BatchPlotPlus.AutoCAD
             if (_subscribed) return;
             ComponentManager.ItemInitialized += OnItemInitialized;
             _subscribed = true;
+            PluginDiagnostics.Write("Ribbon is not available yet; creation was deferred.");
         }
 
         internal static void Terminate()
@@ -35,14 +36,30 @@ namespace BatchPlotPlus.AutoCAD
         private static void OnItemInitialized(object? sender, RibbonItemEventArgs eventArgs)
         {
             if (ComponentManager.Ribbon == null) return;
-            CreateRibbon();
-            Terminate();
+            try
+            {
+                CreateRibbon();
+                Terminate();
+            }
+            catch (Exception exception)
+            {
+                PluginDiagnostics.Write("Deferred Ribbon creation failed.", exception);
+            }
         }
 
         private static void CreateRibbon()
         {
             var ribbon = ComponentManager.Ribbon;
-            if (ribbon == null || ribbon.Tabs.Any(tab => string.Equals(tab.Id, TabId, StringComparison.Ordinal))) return;
+            if (ribbon == null)
+            {
+                PluginDiagnostics.Write("Ribbon creation skipped because the Ribbon control is unavailable.");
+                return;
+            }
+            if (ribbon.Tabs.Any(tab => string.Equals(tab.Id, TabId, StringComparison.Ordinal)))
+            {
+                PluginDiagnostics.Write("Ribbon tab already exists.");
+                return;
+            }
 
             var panelSource = new RibbonPanelSource
             {
@@ -58,6 +75,7 @@ namespace BatchPlotPlus.AutoCAD
             };
             tab.Panels.Add(new RibbonPanel { Source = panelSource });
             ribbon.Tabs.Add(tab);
+            PluginDiagnostics.Write("Ribbon tab created successfully.");
         }
 
         private static RibbonButton CreateButton(string text, string command, string description)

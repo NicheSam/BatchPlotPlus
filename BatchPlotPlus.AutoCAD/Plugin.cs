@@ -15,12 +15,32 @@ namespace BatchPlotPlus.AutoCAD
 
         public void Initialize()
         {
-            RibbonService.Initialize();
+            InitializeRibbonSafely();
         }
 
         public void Terminate()
         {
-            RibbonService.Terminate();
+            try
+            {
+                RibbonService.Terminate();
+            }
+            catch (System.Exception exception)
+            {
+                PluginDiagnostics.Write("Ribbon termination failed.", exception);
+            }
+        }
+
+        private static void InitializeRibbonSafely()
+        {
+            try
+            {
+                RibbonService.Initialize();
+                PluginDiagnostics.Write("Plug-in initialized; Ribbon initialization did not throw.");
+            }
+            catch (System.Exception exception)
+            {
+                PluginDiagnostics.Write("Plug-in commands loaded, but Ribbon initialization failed.", exception);
+            }
         }
 
         [CommandMethod("BATCHPLOTPLUS", CommandFlags.Modal)]
@@ -41,6 +61,16 @@ namespace BatchPlotPlus.AutoCAD
         {
             State.OperationMode = OperationMode.SplitDwg;
             Run();
+        }
+
+        [CommandMethod("BATCHPLOTDIAG", CommandFlags.Modal)]
+        public void DiagnoseInstallation()
+        {
+            var document = AcApp.DocumentManager.MdiActiveDocument;
+            var report = PluginDiagnostics.BuildLoadedReport();
+            PluginDiagnostics.Write("Loaded diagnostic requested.\n" + report);
+            if (document != null)
+                document.Editor.WriteMessage("\n" + report.Replace(Environment.NewLine, "\n"));
         }
 
         private static void Run()

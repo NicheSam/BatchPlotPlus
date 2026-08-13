@@ -36,29 +36,32 @@ def main() -> int:
     dwg_text = DWG.read_text(encoding="utf-8")
     ribbon_text = RIBBON.read_text(encoding="utf-8")
 
-    if manifest.attrib.get("AppVersion") != "1.4.1":
-        raise ValueError("Manifest AppVersion is not 1.4.1")
+    if manifest.attrib.get("AppVersion") != "1.4.2":
+        raise ValueError("Manifest AppVersion is not 1.4.2")
     require(manifest_text, [
         'SeriesMin="R24.0" SeriesMax="R24.3"',
         'ModuleName="./Contents/R24/BatchPlotPlus.AutoCAD.dll"',
         'SeriesMin="R25.0" SeriesMax="R25.0"',
         'ModuleName="./Contents/R25/BatchPlotPlus.AutoCAD.dll"',
-        'LoadReasons="LoadOnAutoCADStartup"',
+        'LoadOnAutoCADStartup="True"',
+        'LoadOnCommandInvocation="True"',
+        '<Commands GroupName="BatchPlotPlus.Commands">',
+        '<Command Global="BATCHPLOTDIAG" Local="BATCHPLOTDIAG"',
     ], "manifest")
     if manifest_text.count('AppType=".Net"') != 2:
         raise ValueError("Manifest must contain exactly two version-routed .NET components")
-    if "<Commands" in manifest_text or "<Command " in manifest_text or "LoadOnCommandInvocation" in manifest_text:
-        raise ValueError("Startup-loaded component must not include command-invocation manifest entries")
+    if "LoadReasons=" in manifest_text:
+        raise ValueError("Nonstandard LoadReasons attribute remains in the manifest")
     require(project_text, [
         "<TargetFrameworks>net48;net8.0-windows</TargetFrameworks>",
-        "<Version>1.4.1</Version>",
+        "<Version>1.4.2</Version>",
         "<UseWindowsForms>true</UseWindowsForms>",
         "<UseWPF>true</UseWPF>",
         '<PackageReference Include="AutoCAD.NET" Version="24.0.0"',
         '<PackageReference Include="AutoCAD.NET" Version="25.0.1"',
     ], "project")
-    require(plugin_text, ["IExtensionApplication", "RibbonService.Initialize", 'CommandMethod("BATCHPLOTPLUS"', 'CommandMethod("BATCHPDF"', 'CommandMethod("BATCHWB"', "AcApp.ShowModalDialog", "PendingAction.SelectTemplate", "PendingAction.SelectRange", "ResetDocumentSelection", "DwgSplitService.Execute", "AddAllowedClass(typeof(BlockReference)", "AddAllowedClass(typeof(Polyline)"], "command")
-    require(ribbon_text, ["ComponentManager.ItemInitialized", "RibbonTab", "RibbonPanel", "RibbonButton", "BatchPlotPlus.RibbonTab", "BATCHPDF ", "BATCHWB ", "return true;", "parameter is RibbonButton button", "button.CommandParameter as string", "SendStringToExecute"], "ribbon")
+    require(plugin_text, ["IExtensionApplication", "InitializeRibbonSafely", "PluginDiagnostics.Write", 'CommandMethod("BATCHPLOTPLUS"', 'CommandMethod("BATCHPDF"', 'CommandMethod("BATCHWB"', 'CommandMethod("BATCHPLOTDIAG"', "AcApp.ShowModalDialog", "PendingAction.SelectTemplate", "PendingAction.SelectRange", "ResetDocumentSelection", "DwgSplitService.Execute", "AddAllowedClass(typeof(BlockReference)", "AddAllowedClass(typeof(Polyline)"], "command")
+    require(ribbon_text, ["ComponentManager.ItemInitialized", "RibbonTab", "RibbonPanel", "RibbonButton", "BatchPlotPlus.RibbonTab", "BATCHPDF ", "BATCHWB ", "return true;", "parameter is RibbonButton button", "button.CommandParameter as string", "SendStringToExecute", "Ribbon tab created successfully.", "Deferred Ribbon creation failed."], "ribbon")
     parameter_index = ribbon_text.index("CommandParameter = command")
     handler_index = ribbon_text.index("button.CommandHandler = CommandHandler")
     if parameter_index >= handler_index or "CommandHandler = CommandHandler," in ribbon_text:

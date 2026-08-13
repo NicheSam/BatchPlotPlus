@@ -1,4 +1,4 @@
-# BatchPlotPlus 1.4.1 control-to-behavior and wording review
+# BatchPlotPlus 1.4.2 control-to-behavior and wording review
 
 Every enabled input below has a state write and a downstream consumer. Informational labels are marked as display-only. Unsupported legacy controls were removed instead of being left disabled or unconnected.
 
