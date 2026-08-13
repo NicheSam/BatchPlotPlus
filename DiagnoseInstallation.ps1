@@ -44,7 +44,24 @@ foreach ($bundle in $found) {
         [xml]$manifest = Get-Content -LiteralPath $manifestPath -Raw -Encoding UTF8
         $version = $manifest.ApplicationPackage.AppVersion
         Add-Line "Version: $version"
-        if ($version -eq "1.4.2") { Add-Pass "Manifest version is 1.4.2." } else { Add-Warn "Manifest is not version 1.4.2." }
+        if ($version -eq "1.4.21") { Add-Pass "Manifest version is 1.4.21." } else { Add-Warn "Manifest is not version 1.4.21." }
+        $bundleFiles = @(Get-ChildItem -LiteralPath $bundle -Recurse -File -ErrorAction Stop)
+        $blockedFiles = New-Object System.Collections.Generic.List[System.IO.FileInfo]
+        foreach ($bundleFile in $bundleFiles) {
+            try {
+                $streams = @(Get-Item -LiteralPath $bundleFile.FullName -Stream * -ErrorAction Stop)
+                if ($streams.Stream -contains "Zone.Identifier") { $blockedFiles.Add($bundleFile) }
+            } catch {
+                Add-Fail "Could not inspect alternate data streams: $($bundleFile.FullName) -- $($_.Exception.Message)"
+            }
+        }
+        if ($blockedFiles.Count -eq 0) {
+            Add-Pass "All $($bundleFiles.Count) bundle files are free of Zone.Identifier."
+        } else {
+            foreach ($blockedFile in $blockedFiles) {
+                Add-Fail "Blocked bundle file: $($blockedFile.FullName)"
+            }
+        }
         $entries = @($manifest.ApplicationPackage.Components.ComponentEntry)
         if ($entries.Count -ne 2) { Add-Fail "Expected two version-routed components; found $($entries.Count)." }
         foreach ($entry in $entries) {
@@ -53,8 +70,6 @@ foreach ($bundle in $found) {
             if (Test-Path -LiteralPath $modulePath) {
                 $item = Get-Item -LiteralPath $modulePath
                 Add-Pass "$($entry.AppName) DLL exists ($($item.Length) bytes)."
-                $zone = Get-Item -LiteralPath $modulePath -Stream Zone.Identifier -ErrorAction SilentlyContinue
-                if ($zone) { Add-Warn "$($entry.AppName) DLL still has a Zone.Identifier download block." }
             } else {
                 Add-Fail "$($entry.AppName) DLL is missing: $modulePath"
             }

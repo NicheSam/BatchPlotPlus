@@ -10,9 +10,9 @@
     <AssemblyName>BatchPlotPlus.AutoCAD</AssemblyName>
     <RootNamespace>BatchPlotPlus.AutoCAD</RootNamespace>
     <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
-    <Version>1.4.2</Version>
-    <AssemblyVersion>1.4.2.0</AssemblyVersion>
-    <FileVersion>1.4.2.0</FileVersion>
+    <Version>1.4.21</Version>
+    <AssemblyVersion>1.4.21.0</AssemblyVersion>
+    <FileVersion>1.4.21.0</FileVersion>
     <CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
   </PropertyGroup>
   <ItemGroup Condition="'$(TargetFramework)' == 'net48'">

@@ -36,8 +36,8 @@ def main() -> int:
     dwg_text = DWG.read_text(encoding="utf-8")
     ribbon_text = RIBBON.read_text(encoding="utf-8")
 
-    if manifest.attrib.get("AppVersion") != "1.4.2":
-        raise ValueError("Manifest AppVersion is not 1.4.2")
+    if manifest.attrib.get("AppVersion") != "1.4.21":
+        raise ValueError("Manifest AppVersion is not 1.4.21")
     require(manifest_text, [
         'SeriesMin="R24.0" SeriesMax="R24.3"',
         'ModuleName="./Contents/R24/BatchPlotPlus.AutoCAD.dll"',
@@ -54,7 +54,7 @@ def main() -> int:
         raise ValueError("Nonstandard LoadReasons attribute remains in the manifest")
     require(project_text, [
         "<TargetFrameworks>net48;net8.0-windows</TargetFrameworks>",
-        "<Version>1.4.2</Version>",
+        "<Version>1.4.21</Version>",
         "<UseWindowsForms>true</UseWindowsForms>",
         "<UseWPF>true</UseWPF>",
         '<PackageReference Include="AutoCAD.NET" Version="24.0.0"',

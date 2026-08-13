@@ -6,8 +6,8 @@ $logicProject = Join-Path $projectRoot "LogicTests\BatchPlotPlus.LogicTests.cspr
 $bundle = Join-Path $projectRoot "Bundle\BatchPlotPlus.bundle"
 $releaseRoot = Join-Path $projectRoot "release"
 $releaseBundle = Join-Path $releaseRoot "BatchPlotPlus.bundle"
-$releaseZip = Join-Path $releaseRoot "BatchPlotPlus-1.4.2.zip"
-$installerZip = Join-Path $releaseRoot "BatchPlotPlus-1.4.2-installer.zip"
+$releaseZip = Join-Path $releaseRoot "BatchPlotPlus-1.4.21.zip"
+$installerZip = Join-Path $releaseRoot "BatchPlotPlus-1.4.21-installer.zip"
 $installerStage = Join-Path $releaseRoot "_installer"
 $r24Output = Join-Path $projectRoot "BatchPlotPlus.AutoCAD\bin\Release\net48\BatchPlotPlus.AutoCAD.dll"
 $r25Output = Join-Path $projectRoot "BatchPlotPlus.AutoCAD\bin\Release\net8.0-windows\BatchPlotPlus.AutoCAD.dll"
@@ -45,11 +45,12 @@ New-Item -ItemType Directory -Path (Join-Path $installerStage "release") -Force 
 Copy-Item -LiteralPath (Join-Path $projectRoot "InstallOrUpdate.bat") -Destination $installerStage -Force
 Copy-Item -LiteralPath (Join-Path $projectRoot "DiagnoseInstallation.bat") -Destination $installerStage -Force
 Copy-Item -LiteralPath (Join-Path $projectRoot "DiagnoseInstallation.ps1") -Destination $installerStage -Force
+Copy-Item -LiteralPath (Join-Path $projectRoot "VerifyUnblocked.ps1") -Destination $installerStage -Force
 Copy-Item -LiteralPath $releaseBundle -Destination (Join-Path $installerStage "release") -Recurse
 if (Test-Path -LiteralPath $installerZip) { Remove-Item -LiteralPath $installerZip -Force }
 Compress-Archive -Path (Join-Path $installerStage "*") -DestinationPath $installerZip -CompressionLevel Optimal
 Remove-Item -LiteralPath $installerStage -Recurse -Force
 
-Write-Output "BatchPlotPlus 1.4.2 release created."
+Write-Output "BatchPlotPlus 1.4.21 release created."
 Write-Output $releaseZip
 Write-Output $installerZip
