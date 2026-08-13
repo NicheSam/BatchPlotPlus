@@ -6,8 +6,8 @@ $logicProject = Join-Path $projectRoot "LogicTests\BatchPlotPlus.LogicTests.cspr
 $bundle = Join-Path $projectRoot "Bundle\BatchPlotPlus.bundle"
 $releaseRoot = Join-Path $projectRoot "release"
 $releaseBundle = Join-Path $releaseRoot "BatchPlotPlus.bundle"
-$releaseZip = Join-Path $releaseRoot "BatchPlotPlus-1.4.21.zip"
-$installerZip = Join-Path $releaseRoot "BatchPlotPlus-1.4.21-installer.zip"
+$releaseZip = Join-Path $releaseRoot "BatchPlotPlus-1.4.3.zip"
+$installerZip = Join-Path $releaseRoot "BatchPlotPlus-1.4.3-installer.zip"
 $installerStage = Join-Path $releaseRoot "_installer"
 $r24Output = Join-Path $projectRoot "BatchPlotPlus.AutoCAD\bin\Release\net48\BatchPlotPlus.AutoCAD.dll"
 $r25Output = Join-Path $projectRoot "BatchPlotPlus.AutoCAD\bin\Release\net8.0-windows\BatchPlotPlus.AutoCAD.dll"
@@ -34,6 +34,8 @@ python (Join-Path $projectRoot "tools\validate_bundle.py")
 if ($LASTEXITCODE -ne 0) { throw "Bundle validation failed." }
 python (Join-Path $projectRoot "tools\test_installation_contract.py")
 if ($LASTEXITCODE -ne 0) { throw "Installation contract failed." }
+python (Join-Path $projectRoot "tools\test_ui_contract.py")
+if ($LASTEXITCODE -ne 0) { throw "UI and workflow contract failed." }
 
 New-Item -ItemType Directory -Path $releaseRoot -Force | Out-Null
 if (Test-Path -LiteralPath $releaseBundle) { Remove-Item -LiteralPath $releaseBundle -Recurse -Force }
@@ -43,6 +45,7 @@ Compress-Archive -LiteralPath $releaseBundle -DestinationPath $releaseZip -Compr
 if (Test-Path -LiteralPath $installerStage) { Remove-Item -LiteralPath $installerStage -Recurse -Force }
 New-Item -ItemType Directory -Path (Join-Path $installerStage "release") -Force | Out-Null
 Copy-Item -LiteralPath (Join-Path $projectRoot "InstallOrUpdate.bat") -Destination $installerStage -Force
+Copy-Item -LiteralPath (Join-Path $projectRoot "InstallOrUpdate.ps1") -Destination $installerStage -Force
 Copy-Item -LiteralPath (Join-Path $projectRoot "DiagnoseInstallation.bat") -Destination $installerStage -Force
 Copy-Item -LiteralPath (Join-Path $projectRoot "DiagnoseInstallation.ps1") -Destination $installerStage -Force
 Copy-Item -LiteralPath (Join-Path $projectRoot "VerifyUnblocked.ps1") -Destination $installerStage -Force
@@ -51,6 +54,9 @@ if (Test-Path -LiteralPath $installerZip) { Remove-Item -LiteralPath $installerZ
 Compress-Archive -Path (Join-Path $installerStage "*") -DestinationPath $installerZip -CompressionLevel Optimal
 Remove-Item -LiteralPath $installerStage -Recurse -Force
 
-Write-Output "BatchPlotPlus 1.4.21 release created."
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File (Join-Path $projectRoot "tools\test_installer_paths.ps1") -InstallerZip $installerZip
+if ($LASTEXITCODE -ne 0) { throw "Installer path tests failed." }
+
+Write-Output "BatchPlotPlus 1.4.3 release created."
 Write-Output $releaseZip
 Write-Output $installerZip

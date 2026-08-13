@@ -7,6 +7,7 @@ namespace BatchPlotPlus.AutoCAD
     internal enum OutputMode { SeparatePdf, MergedPdf }
     internal enum PendingAction { None, SelectTemplate, SelectRange, SelectSheets, ClearRange, ClearSheets }
     internal enum SortMode { Selection, LeftRightTopBottom, TopBottomLeftRight }
+    internal enum PageOrientation { Auto, Landscape, Portrait }
 
     internal struct RangeBounds
     {
@@ -40,9 +41,13 @@ namespace BatchPlotPlus.AutoCAD
         public int Copies { get; set; } = 1;
         public bool FitToPaper { get; set; } = true;
         public double FixedScale { get; set; } = 100.0;
-        public SortMode SortMode { get; set; } = SortMode.LeftRightTopBottom;
-        public bool ReverseOrder { get; set; }
-        public bool AutoRotate { get; set; } = true;
+        public SortMode PdfSortMode { get; set; } = SortMode.LeftRightTopBottom;
+        public bool PdfReverseOrder { get; set; }
+        public SortMode DwgSortMode { get; set; } = SortMode.LeftRightTopBottom;
+        public bool DwgReverseOrder { get; set; }
+        public PageOrientation PageOrientation { get; set; } = PageOrientation.Auto;
+        public bool PrintLineweights { get; set; } = true;
+        public bool PlotTransparency { get; set; }
         public bool ReverseOrientation { get; set; }
         public bool CenterPlot { get; set; } = true;
         public string OutputDirectory { get; set; } = "";

@@ -1,4 +1,4 @@
-BatchPlotPlus 1.4.21
+BatchPlotPlus 1.4.3
 
 AutoCAD command: BATCHPLOTPLUS
 PDF shortcut: BATCHPDF opens the same window on the PDF tab.

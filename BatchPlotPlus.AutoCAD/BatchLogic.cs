@@ -15,6 +15,13 @@ namespace BatchPlotPlus.AutoCAD
         public double MaxY { get; set; }
     }
 
+    internal sealed class PlotBehavior
+    {
+        public int RotationDegrees { get; set; }
+        public bool PrintLineweights { get; set; }
+        public bool PlotTransparency { get; set; }
+    }
+
     internal static class BatchLogic
     {
         public static bool WildcardMatch(string value, string pattern)
@@ -75,6 +82,24 @@ namespace BatchPlotPlus.AutoCAD
             if (!string.IsNullOrEmpty(exact) && IsPlotStyleCompatible(colorDependent, exact)) return exact;
             var equivalent = Path.GetFileNameWithoutExtension(current) + RequiredPlotStyleExtension(colorDependent);
             return available.FirstOrDefault(name => string.Equals(name, equivalent, StringComparison.OrdinalIgnoreCase)) ?? "";
+        }
+
+        public static int ResolvePlotRotationDegrees(PageOrientation orientation, bool frameIsLandscape, bool reverse)
+        {
+            var landscape = orientation == PageOrientation.Landscape ||
+                (orientation == PageOrientation.Auto && frameIsLandscape);
+            if (landscape) return reverse ? 270 : 90;
+            return reverse ? 180 : 0;
+        }
+
+        public static PlotBehavior ResolvePlotBehavior(PluginState state, bool frameIsLandscape)
+        {
+            return new PlotBehavior
+            {
+                RotationDegrees = ResolvePlotRotationDegrees(state.PageOrientation, frameIsLandscape, state.ReverseOrientation),
+                PrintLineweights = state.PrintLineweights,
+                PlotTransparency = state.PlotTransparency
+            };
         }
 
         private static List<SheetOrderItem> GroupAndSort(IList<SheetOrderItem> items, bool rowsFirst)

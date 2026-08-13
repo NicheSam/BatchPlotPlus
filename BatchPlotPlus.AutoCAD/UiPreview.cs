@@ -16,8 +16,13 @@ namespace BatchPlotPlus.AutoCAD
                 OutputDirectory = @"C:\Output\PDF",
                 DwgOutputDirectory = @"C:\Output\SplitDWG",
                 MatchingFrameCount = 9,
-                MatchingNamedFrameCount = 8
+                MatchingNamedFrameCount = 8,
+                PlotStyle = "monochrome.ctb",
+                PrintLineweights = true,
+                PlotTransparency = false,
+                PageOrientation = PageOrientation.Auto
             };
+            state.AvailablePlotStyles.Add("monochrome.ctb");
             using (var form = new BatchPlotForm(state))
             using (var bitmap = new Bitmap(form.Width, form.Height))
             {

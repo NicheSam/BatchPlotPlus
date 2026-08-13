@@ -17,16 +17,18 @@ Add-Line ("Generated: " + (Get-Date -Format "yyyy-MM-dd HH:mm:ss zzz"))
 Add-Line ("Windows: " + [Environment]::OSVersion.VersionString)
 Add-Line ""
 
-$trustedBundle = Join-Path $env:ProgramFiles "Autodesk\ApplicationPlugins\BatchPlotPlus.bundle"
+$trustedBundle = Join-Path $env:ProgramData "Autodesk\ApplicationPlugins\BatchPlotPlus.bundle"
+$programFilesBundle = Join-Path $env:ProgramFiles "Autodesk\ApplicationPlugins\BatchPlotPlus.bundle"
+$programFilesX86Bundle = if (${env:ProgramFiles(x86)}) { Join-Path ${env:ProgramFiles(x86)} "Autodesk\ApplicationPlugins\BatchPlotPlus.bundle" } else { "" }
 $userBundle = if ($env:APPDATA) { Join-Path $env:APPDATA "Autodesk\ApplicationPlugins\BatchPlotPlus.bundle" } else { "" }
 $allUsersBundle = if ($env:ProgramData) { Join-Path $env:ProgramData "Autodesk\ApplicationPlugins\BatchPlotPlus.bundle" } else { "" }
-$locations = @($trustedBundle, $userBundle, $allUsersBundle) | Where-Object { $_ } | Select-Object -Unique
+$locations = @($trustedBundle, $programFilesBundle, $programFilesX86Bundle, $userBundle, $allUsersBundle) | Where-Object { $_ } | Select-Object -Unique
 $found = @($locations | Where-Object { Test-Path -LiteralPath $_ })
 
 if (Test-Path -LiteralPath $trustedBundle) {
-    Add-Pass "Trusted Program Files bundle exists."
+    Add-Pass "Trusted ProgramData bundle exists."
 } else {
-    Add-Fail "Trusted Program Files bundle is missing: $trustedBundle"
+    Add-Fail "Trusted ProgramData bundle is missing: $trustedBundle"
 }
 if ($found.Count -gt 1) {
     Add-Warn ("Duplicate bundle locations found: " + ($found -join " | "))
@@ -44,7 +46,7 @@ foreach ($bundle in $found) {
         [xml]$manifest = Get-Content -LiteralPath $manifestPath -Raw -Encoding UTF8
         $version = $manifest.ApplicationPackage.AppVersion
         Add-Line "Version: $version"
-        if ($version -eq "1.4.21") { Add-Pass "Manifest version is 1.4.21." } else { Add-Warn "Manifest is not version 1.4.21." }
+        if ($version -eq "1.4.3") { Add-Pass "Manifest version is 1.4.3." } else { Add-Warn "Manifest is not version 1.4.3." }
         $bundleFiles = @(Get-ChildItem -LiteralPath $bundle -Recurse -File -ErrorAction Stop)
         $blockedFiles = New-Object System.Collections.Generic.List[System.IO.FileInfo]
         foreach ($bundleFile in $bundleFiles) {
@@ -73,8 +75,7 @@ foreach ($bundle in $found) {
             } else {
                 Add-Fail "$($entry.AppName) DLL is missing: $modulePath"
             }
-            if ([string]$entry.LoadOnAutoCADStartup -ne "True") { Add-Fail "$($entry.AppName) startup load flag is not enabled." }
-            if ([string]$entry.LoadOnCommandInvocation -ne "True") { Add-Fail "$($entry.AppName) command load flag is not enabled." }
+            if ([string]$entry.LoadReasons -ne "LoadOnAutoCADStartup") { Add-Fail "$($entry.AppName) does not use the supported startup LoadReasons value." }
             $commands = @($entry.Commands.Command | ForEach-Object { [string]$_.Global })
             foreach ($required in @("BATCHPLOTPLUS", "BATCHPDF", "BATCHWB", "BATCHPLOTDIAG")) {
                 if ($commands -notcontains $required) { Add-Fail "$($entry.AppName) does not declare $required." }
@@ -123,6 +124,27 @@ if ($settings.Count -eq 0) {
         Add-Line "Profile: $($setting.Path); APPAUTOLOAD=$($setting.APPAUTOLOAD); SECURELOAD=$($setting.SECURELOAD)"
         if ($null -ne $setting.APPAUTOLOAD -and ([int]$setting.APPAUTOLOAD -band 2) -eq 0) {
             Add-Warn "This profile does not enable startup plug-in loading."
+        }
+    }
+}
+
+$loaderKeys = @()
+if (Test-Path "HKCU:\Software\Autodesk\AutoCAD") {
+    $loaderKeys = @(Get-ChildItem "HKCU:\Software\Autodesk\AutoCAD" -Recurse -ErrorAction SilentlyContinue | Where-Object {
+        $_.PSChildName -in @("BatchPlotPlus.R24", "BatchPlotPlus.R25")
+    })
+}
+if ($loaderKeys.Count -eq 0) {
+    Add-Warn "No BatchPlotPlus Loader registration exists yet. Restart AutoCAD once, then run this diagnostic again."
+} else {
+    foreach ($loaderKey in $loaderKeys) {
+        $loader = [string](Get-ItemProperty -LiteralPath $loaderKey.PSPath -ErrorAction SilentlyContinue).LOADER
+        if ([string]::IsNullOrWhiteSpace($loader)) {
+            Add-Fail "Loader registration has no LOADER value: $($loaderKey.Name)"
+        } elseif ($loader.StartsWith($trustedBundle, [StringComparison]::OrdinalIgnoreCase) -and (Test-Path -LiteralPath $loader)) {
+            Add-Pass "Loader points to the trusted v1.4.3 bundle: $loader"
+        } else {
+            Add-Fail "Loader points to a missing or legacy DLL: $loader"
         }
     }
 }

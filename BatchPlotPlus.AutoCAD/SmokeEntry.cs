@@ -33,7 +33,7 @@ namespace BatchPlotPlus.AutoCAD
                 PlotStyle = document.Database.PlotStyleMode ? "monochrome.ctb" : "monochrome.stb",
                 FitToPaper = true,
                 CenterPlot = true,
-                AutoRotate = true
+                PageOrientation = PageOrientation.Auto
             };
             var frames = new List<PlotService.FrameInfo>
             {
@@ -203,7 +203,7 @@ namespace BatchPlotPlus.AutoCAD
                 PlotStyle = document.Database.PlotStyleMode ? "monochrome.ctb" : "monochrome.stb",
                 FitToPaper = true,
                 CenterPlot = true,
-                AutoRotate = true
+                PageOrientation = PageOrientation.Auto
             };
             PlotService.DescribeTemplate(document.Database, templateId, out var layer);
             state.LayerName = layer;

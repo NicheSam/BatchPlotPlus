@@ -1,6 +1,6 @@
 # BatchPlotPlus
 
-BatchPlotPlus 是供 AutoCAD 2021–2025（Windows 64 位元）使用的繁體中文批次出圖工具。目前版本為 **1.4.21**。
+BatchPlotPlus 是供 AutoCAD 2021–2025（Windows 64 位元）使用的繁體中文批次出圖工具。目前版本為 **1.4.3**。
 
 它把「批次輸出多頁 PDF」與「依圖框拆分 DWG」整合在同一個視窗與 Ribbon 頁籤，並以不儲存來源圖面變更為原則執行暫時性出圖處理。
 
@@ -12,11 +12,23 @@ BatchPlotPlus 是供 AutoCAD 2021–2025（Windows 64 位元）使用的繁體�
 
 - 依同名圖框、矩形聚合線或封閉聚合線尋找圖紙範圍。
 - 將全部圖框輸出為一份多頁 PDF，或分別輸出單頁 PDF。
-- 自動符合紙張、置中、旋轉及排序。
+- 自動符合紙張、置中，並可選擇自動、橫向或直向紙張方向。
+- 出圖樣式之外，可獨立開啟或關閉物件線粗與透明度列印。
 - 依目前 DWG 模式限制出圖樣式：CTB 圖面只顯示 CTB，STB 圖面只顯示 STB。
 - 使用 `monochrome` 時，在未提交的 AutoCAD transaction 中暫時處理 True Color／命名樣式顏色，出圖後回復。
 - 依圖框批次拆分 DWG，並提供先測試前 2 張的安全選項。
 - 自動載入「批次輸出工具」Ribbon 頁籤。
+
+## 1.4.3 更新
+
+- 新增「列印物件線粗」與「列印物件透明度」開關，並直接對應 AutoCAD 出圖設定。
+- 新增自動、橫向、直向三種圖紙方向，保留另外旋轉 180° 與圖框置中。
+- PDF 與 DWG 排序狀態已分離，切換頁籤不會互相覆寫。
+- 安裝器改為 PowerShell 主體、BAT 入口，修正括號、`&`、中文與 `!` 路徑解析、UAC 等待與退出碼傳遞。
+- 改部署到 `%ProgramData%\Autodesk\ApplicationPlugins`，並在備份後清除指向舊路徑的 Loader 登錄。
+- 安裝成功僅代表靜態部署驗證通過；AutoCAD 執行期載入需由 `BATCHPLOTDIAG` 再確認。
+
+> 版本號依專案要求收斂為 1.4.3；本版取代之前標示為 1.4.21 的安裝包。
 
 ## 1.4.21 更新
 
@@ -45,7 +57,7 @@ BatchPlotPlus 是供 AutoCAD 2021–2025（Windows 64 位元）使用的繁體�
 
 一般使用者不需要 Visual Studio 或 .NET SDK：
 
-1. 從 [GitHub Releases](https://github.com/NicheSam/BatchPlotPlus/releases/latest) 下載 `BatchPlotPlus-1.4.21-installer.zip`。
+1. 從 [GitHub Releases](https://github.com/NicheSam/BatchPlotPlus/releases/latest) 下載 `BatchPlotPlus-1.4.3-installer.zip`。
 2. 解壓縮全部內容。
 3. 完整關閉 AutoCAD。
 4. 雙擊 `InstallOrUpdate.bat`。
@@ -63,7 +75,7 @@ BatchPlotPlus 是供 AutoCAD 2021–2025（Windows 64 位元）使用的繁體�
 部署位置：
 
 ```text
-%ProgramFiles%\Autodesk\ApplicationPlugins\BatchPlotPlus.bundle
+%ProgramData%\Autodesk\ApplicationPlugins\BatchPlotPlus.bundle
 ```
 
 安裝程式不會強制關閉 AutoCAD；若偵測到 AutoCAD 正在執行，會停止部署。若安裝後仍未載入，請先執行解壓縮資料夾內的 `DiagnoseInstallation.bat`，再將桌面產生的診斷報告提供給維護者。
@@ -97,10 +109,13 @@ ui-preview/             PDF／DWG 頁籤畫面
 
 ## 驗證狀態
 
-1.4.21 已通過：
+1.4.3 已通過：
 
 - `net48` 與 `net8.0-windows` Release 建置：0 warnings、0 errors。
-- 21 項純邏輯測試。
+- 31 項純邏輯測試。
+- 全域 UI 控制項→狀態→後端消費者契約測試。
+- 安裝器在空格、括號、`&`、中文、`!` 五種路徑的非部署沙盒測試。
+- 安裝檔缺失時回傳非零退出碼與明確錯誤訊息。
 - 安裝位置、manifest 載入旗標、指令宣告與診斷檔封裝契約測試。
 - 實際建立 `Zone.Identifier` 的負向測試：未修復時安裝驗證失敗，逐檔解除後無殘留標記。
 - R24／R25 bundle 路由、目標框架、DLL 與封裝結構驗證。
@@ -119,8 +134,8 @@ ui-preview/             PDF／DWG 頁籤畫面
 
 ## English
 
-BatchPlotPlus 1.4.21 is a Traditional Chinese plug-in for AutoCAD 2021–2025 on 64-bit Windows. It provides a Ribbon tab and a two-tab WinForms interface for native multi-page PDF output and copy-safe DWG splitting. The bundle automatically loads a .NET Framework 4.8 assembly on AutoCAD 2021–2024 and a .NET 8 assembly on AutoCAD 2025.
+BatchPlotPlus 1.4.3 is a Traditional Chinese plug-in for AutoCAD 2021–2025 on 64-bit Windows. It provides a Ribbon tab and a two-tab WinForms interface for native multi-page PDF output and copy-safe DWG splitting. The bundle automatically loads a .NET Framework 4.8 assembly on AutoCAD 2021–2024 and a .NET 8 assembly on AutoCAD 2025.
 
-Version 1.4.21 makes download-block removal and full-bundle `Zone.Identifier` verification mandatory. A blocked source, staged, or deployed file now fails installation, and deployment failures attempt to restore the previous bundle. Version 1.4.2 improved cross-machine installation and AutoCAD loading reliability.
+Version 1.4.3 adds independent lineweight and transparency output switches, explicit page orientation, safer ProgramData deployment, stale Loader cleanup, special-character path handling, and truthful UAC exit-code propagation. The 1.4.3 numbering supersedes the earlier 1.4.21 package label.
 
 Download the installer package from [GitHub Releases](https://github.com/NicheSam/BatchPlotPlus/releases/latest), extract it, close AutoCAD, and run `InstallOrUpdate.bat`. AutoCAD 2021 and 2025 should still receive version-specific runtime smoke testing because those hosts are not installed in the current development environment.

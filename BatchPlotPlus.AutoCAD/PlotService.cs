@@ -212,7 +212,7 @@ namespace BatchPlotPlus.AutoCAD
         }
 
         internal static List<FrameInfo> SortFrames(List<FrameInfo> frames, PluginState state)
-            => SortFrames(frames, state.SortMode, state.ReverseOrder);
+            => SortFrames(frames, state.PdfSortMode, state.PdfReverseOrder);
 
         internal static List<FrameInfo> SortFrames(List<FrameInfo> frames, SortMode mode, bool reverse)
         {
@@ -447,10 +447,21 @@ namespace BatchPlotPlus.AutoCAD
                 }
                 catch (System.Exception exception) { throw new InvalidOperationException("無法套用出圖樣式 " + state.PlotStyle + "。", exception); }
             }
-            var landscape = (max.X - min.X) >= (max.Y - min.Y);
-            var rotation = state.AutoRotate && landscape ? PlotRotation.Degrees090 : PlotRotation.Degrees000;
-            if (state.ReverseOrientation)
-                rotation = rotation == PlotRotation.Degrees000 ? PlotRotation.Degrees180 : PlotRotation.Degrees270;
+            else
+            {
+                settings.PlotPlotStyles = false;
+            }
+            var frameIsLandscape = (max.X - min.X) >= (max.Y - min.Y);
+            var behavior = BatchLogic.ResolvePlotBehavior(state, frameIsLandscape);
+            settings.PrintLineweights = behavior.PrintLineweights;
+            settings.PlotTransparency = behavior.PlotTransparency;
+            var rotation = behavior.RotationDegrees == 90
+                ? PlotRotation.Degrees090
+                : behavior.RotationDegrees == 180
+                    ? PlotRotation.Degrees180
+                    : behavior.RotationDegrees == 270
+                        ? PlotRotation.Degrees270
+                        : PlotRotation.Degrees000;
             validator.SetPlotRotation(settings, rotation);
             var info = new PlotInfo { Layout = layout.ObjectId, OverrideSettings = settings };
             PlotInfoValidator? infoValidator = null;

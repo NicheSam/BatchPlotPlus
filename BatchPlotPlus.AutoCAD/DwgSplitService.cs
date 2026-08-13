@@ -22,7 +22,10 @@ namespace BatchPlotPlus.AutoCAD
                 throw new InvalidOperationException("請先切換到模型空間，再執行拆分 DWG。");
 
             Directory.CreateDirectory(state.DwgOutputDirectory);
-            var frames = PlotService.SortFrames(PlotService.CollectFrames(document.Database, state), state);
+            var frames = PlotService.SortFrames(
+                PlotService.CollectFrames(document.Database, state),
+                state.DwgSortMode,
+                state.DwgReverseOrder);
             for (var index = 0; index < frames.Count; index++)
                 frames[index].FileBase = BatchLogic.DwgFileBase(
                     frames[index].FileBase, frames[index].HasDrawingName, state.DwgFilePrefix, index + 1);

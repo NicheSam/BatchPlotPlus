@@ -1,5 +1,31 @@
 # 更新紀錄
 
+## 1.4.3 — 2026-08-13
+
+### 新增
+
+- PDF 頁籤新增「列印物件線粗」與「列印物件透明度」開關，分別對應 AutoCAD `PrintLineweights` 與 `PlotTransparency`。
+- 圖紙方向新增自動、橫向、直向三種選擇，並保留另外旋轉 180° 與圖框置中。
+- 新增全域 UI／工作流契約測試與安裝器特殊路徑沙盒測試。
+
+### 修正
+
+- 安裝主體改為 PowerShell，BAT 僅作為一鍵入口，修正路徑含空格、括號、`&`、中文或 `!` 時的解析失敗。
+- UAC 提升後會等待安裝完成並回傳真實退出碼，不再在子程序失敗時誤報成功。
+- 部署位置改為 `%ProgramData%\Autodesk\ApplicationPlugins`，並在匯出備份後清除指向已刪除舊 bundle 的 R24／R25 Loader。
+- `PackageContents.xml` 改用 Autodesk 支援的 `LoadReasons="LoadOnAutoCADStartup"` 寫法。
+- PDF 與 DWG 的排序模式與反轉順序改為獨立狀態，切換頁籤不再互相覆寫。
+- 選擇「無」出圖樣式時明確關閉 plot style，PDF 與 DWG 失敗對話框也改為各自正確標題。
+- 診斷工具新增 Loader 路徑檢查，可區分未曾完成 AutoCAD 載入與指向舊版 DLL。
+
+### 驗證
+
+- `net48` 與 `net8.0-windows` Release 建置：0 warnings、0 errors。
+- 31 項純邏輯測試、bundle 驗證、安裝契約與 UI／工作流契約測試通過。
+- 空格、括號、`&`、中文、`!` 五種路徑通過；缺少 manifest 的失敗路徑正確回傳 40。
+
+> 本版依專案要求使用 1.4.3，並取代之前標示為 1.4.21 的安裝包。
+
 ## 1.4.21 — 2026-08-13
 
 ### 修正

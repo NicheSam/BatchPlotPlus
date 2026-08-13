@@ -18,11 +18,18 @@ internal static class Program
             Frame("bottom-right", 100, -1), Frame("top-right", 100, 101),
             Frame("bottom-left", 0, 0), Frame("top-left", 0, 100)
         };
-        var state = new PluginState { SortMode = SortMode.LeftRightTopBottom };
-        Check(Order(BatchLogic.Sort(frames, state.SortMode, false)) == "top-left,top-right,bottom-left,bottom-right", "row-first ordering");
-        state.SortMode = SortMode.TopBottomLeftRight;
-        Check(Order(BatchLogic.Sort(frames, state.SortMode, false)) == "top-left,bottom-left,top-right,bottom-right", "column-first ordering");
-        Check(Order(BatchLogic.Sort(frames, state.SortMode, true)) == "bottom-right,top-right,bottom-left,top-left", "reverse ordering");
+        var state = new PluginState
+        {
+            PdfSortMode = SortMode.LeftRightTopBottom,
+            DwgSortMode = SortMode.TopBottomLeftRight,
+            PdfReverseOrder = false,
+            DwgReverseOrder = true
+        };
+        Check(Order(BatchLogic.Sort(frames, state.PdfSortMode, false)) == "top-left,top-right,bottom-left,bottom-right", "row-first ordering");
+        state.PdfSortMode = SortMode.TopBottomLeftRight;
+        Check(Order(BatchLogic.Sort(frames, state.PdfSortMode, false)) == "top-left,bottom-left,top-right,bottom-right", "column-first ordering");
+        Check(Order(BatchLogic.Sort(frames, state.PdfSortMode, true)) == "bottom-right,top-right,bottom-left,top-left", "reverse ordering");
+        Check(state.DwgSortMode == SortMode.TopBottomLeftRight && state.DwgReverseOrder, "PDF and DWG ordering settings stay independent");
 
         var safe = BatchLogic.SafeFileName("A:B/C*D?");
         Check(safe.IndexOfAny(System.IO.Path.GetInvalidFileNameChars()) < 0, "filename sanitization");
@@ -48,6 +55,25 @@ internal static class Program
         Check(!BatchLogic.IsPlotStyleCompatible(true, "monochrome.stb"), "reject STB for CTB drawing");
         Check(BatchLogic.SelectCompatiblePlotStyle(true, "monochrome.stb", styles) == "monochrome.ctb", "map STB selection to CTB equivalent");
         Check(BatchLogic.SelectCompatiblePlotStyle(false, "office.ctb", styles) == "", "clear unavailable STB equivalent");
+
+        Check(BatchLogic.ResolvePlotRotationDegrees(PageOrientation.Auto, true, false) == 90, "auto landscape rotation");
+        Check(BatchLogic.ResolvePlotRotationDegrees(PageOrientation.Auto, false, false) == 0, "auto portrait rotation");
+        Check(BatchLogic.ResolvePlotRotationDegrees(PageOrientation.Landscape, false, false) == 90, "forced landscape rotation");
+        Check(BatchLogic.ResolvePlotRotationDegrees(PageOrientation.Portrait, true, false) == 0, "forced portrait rotation");
+        Check(BatchLogic.ResolvePlotRotationDegrees(PageOrientation.Landscape, true, true) == 270, "reverse landscape rotation");
+        Check(BatchLogic.ResolvePlotRotationDegrees(PageOrientation.Portrait, false, true) == 180, "reverse portrait rotation");
+
+        var plotOptions = new PluginState
+        {
+            PageOrientation = PageOrientation.Landscape,
+            ReverseOrientation = true,
+            PrintLineweights = false,
+            PlotTransparency = true
+        };
+        var behavior = BatchLogic.ResolvePlotBehavior(plotOptions, false);
+        Check(behavior.RotationDegrees == 270, "plot behavior rotation");
+        Check(!behavior.PrintLineweights, "plot behavior disables lineweights");
+        Check(behavior.PlotTransparency, "plot behavior enables transparency");
 
         Console.WriteLine("Logic tests passed: " + _checks);
     }

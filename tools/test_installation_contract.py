@@ -17,26 +17,34 @@ def main() -> int:
     entries = manifest.findall("./Components/ComponentEntry")
     require(len(entries) == 2, "expected two version-routed components")
     for entry in entries:
-        require(entry.attrib.get("LoadOnAutoCADStartup") == "True", "startup load flag is missing")
-        require(entry.attrib.get("LoadOnCommandInvocation") == "True", "command fallback cannot trigger loading")
-        require("LoadReasons" not in entry.attrib, "nonstandard LoadReasons attribute is still present")
+        require(entry.attrib.get("LoadReasons") == "LoadOnAutoCADStartup", "official startup load reason is missing")
+        require("LoadOnAutoCADStartup" not in entry.attrib, "startup load reason is written as a nonstandard standalone attribute")
+        require("LoadOnCommandInvocation" not in entry.attrib, "command load reason is written as a nonstandard standalone attribute")
         commands = {item.attrib.get("Global") for item in entry.findall("./Commands/Command")}
         require(
             {"BATCHPLOTPLUS", "BATCHPDF", "BATCHWB", "BATCHPLOTDIAG"}.issubset(commands),
             "manifest command declarations are incomplete",
         )
 
-    installer = (ROOT / "InstallOrUpdate.bat").read_text(encoding="utf-8")
-    require("%ProgramFiles%\\Autodesk\\ApplicationPlugins" in installer, "installer target is not implicitly trusted")
-    require("-Verb RunAs" in installer, "installer does not self-elevate for the trusted target")
-    require('VerifyUnblocked.ps1" -Path "%SOURCE%" -Repair' in installer, "source files are not verified")
-    require('VerifyUnblocked.ps1" -Path "%STAGE%" -Repair' in installer, "staged files are not verified")
-    require('VerifyUnblocked.ps1" -Path "%TARGET%" -Repair' in installer, "deployed files are not verified")
-    require("if errorlevel 1 goto :source_blocked" in installer, "source unblock failure is not fatal")
-    require("if errorlevel 1 goto :stage_blocked" in installer, "staged block is not fatal")
-    require("if errorlevel 1 goto :target_blocked" in installer, "deployed block is not fatal")
-    require("if errorlevel 1 goto :target_verify_failed" in installer, "deployed integrity failure is not fatal")
-    require("move \"%BACKUP%\" \"%TARGET%\"" in installer, "failed activation cannot restore the previous bundle")
+    installer_bat = (ROOT / "InstallOrUpdate.bat").read_text(encoding="utf-8")
+    require('InstallOrUpdate.ps1"' in installer_bat, "BAT wrapper does not delegate to PowerShell")
+    require("%SOURCE%" not in installer_bat, "BAT wrapper still expands source paths inside cmd blocks")
+
+    installer_path = ROOT / "InstallOrUpdate.ps1"
+    require(installer_path.is_file(), "PowerShell installer is missing")
+    installer = installer_path.read_text(encoding="utf-8")
+    require('Join-Path $env:ProgramData "Autodesk\\ApplicationPlugins"' in installer, "installer target is not ProgramData")
+    require("-Verb RunAs" in installer and "-Wait" in installer and "-PassThru" in installer, "elevated process result is not awaited")
+    require("$elevatedProcess = Start-Process" in installer, "UAC process variable can collide with the Elevated switch parameter")
+    require("$elevatedProcess.ExitCode" in installer, "elevated exit code is not returned")
+    require("$elevated = Start-Process" not in installer, "PowerShell's case-insensitive Elevated variable collision is present")
+    require("BatchPlotPlus-install.log" in installer, "installer has no fixed diagnostic log")
+    require("Backup-AndRemoveLegacyLoaders" in installer, "stale Loader cleanup is missing")
+    require("reg.exe" in installer and "export" in installer, "Loader cleanup has no registry backup")
+    require("runtime verification is pending" in installer, "installer overclaims AutoCAD runtime success")
+    require("ValidateOnly" in installer, "installer has no non-mutating path validation mode")
+    require("Verify-BundleUnblocked" in installer, "source, staged, and deployed files are not verified")
+    require("Restore-PreviousBundle" in installer, "failed activation cannot restore the previous bundle")
 
     verifier = (ROOT / "VerifyUnblocked.ps1").read_text(encoding="utf-8")
     require("Get-ChildItem -LiteralPath $Path -Recurse -File" in verifier, "verifier does not enumerate every bundle file")
@@ -57,6 +65,8 @@ def main() -> int:
     build = (ROOT / "BuildRelease.ps1").read_text(encoding="utf-8")
     require("DiagnoseInstallation.ps1" in build, "diagnostic is not included in installer packaging")
     require("VerifyUnblocked.ps1" in build, "blocked-file verifier is not included in installer packaging")
+    require("InstallOrUpdate.ps1" in build, "PowerShell installer is not included in installer packaging")
+    require("test_installer_paths.ps1" in build, "special-character installer path tests are not part of the release build")
 
     diagnostic_text = diagnostic.read_text(encoding="utf-8")
     require("All $($bundleFiles.Count) bundle files are free of Zone.Identifier." in diagnostic_text, "diagnostic does not report full-bundle verification")

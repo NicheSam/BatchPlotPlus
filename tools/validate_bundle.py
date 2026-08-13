@@ -36,31 +36,32 @@ def main() -> int:
     dwg_text = DWG.read_text(encoding="utf-8")
     ribbon_text = RIBBON.read_text(encoding="utf-8")
 
-    if manifest.attrib.get("AppVersion") != "1.4.21":
-        raise ValueError("Manifest AppVersion is not 1.4.21")
+    if manifest.attrib.get("AppVersion") != "1.4.3":
+        raise ValueError("Manifest AppVersion is not 1.4.3")
     require(manifest_text, [
         'SeriesMin="R24.0" SeriesMax="R24.3"',
         'ModuleName="./Contents/R24/BatchPlotPlus.AutoCAD.dll"',
         'SeriesMin="R25.0" SeriesMax="R25.0"',
         'ModuleName="./Contents/R25/BatchPlotPlus.AutoCAD.dll"',
-        'LoadOnAutoCADStartup="True"',
-        'LoadOnCommandInvocation="True"',
+        'LoadReasons="LoadOnAutoCADStartup"',
         '<Commands GroupName="BatchPlotPlus.Commands">',
         '<Command Global="BATCHPLOTDIAG" Local="BATCHPLOTDIAG"',
     ], "manifest")
     if manifest_text.count('AppType=".Net"') != 2:
         raise ValueError("Manifest must contain exactly two version-routed .NET components")
-    if "LoadReasons=" in manifest_text:
-        raise ValueError("Nonstandard LoadReasons attribute remains in the manifest")
+    if "LoadOnAutoCADStartup=" in manifest_text or "LoadOnCommandInvocation=" in manifest_text:
+        raise ValueError("Load reasons must not be written as standalone ComponentEntry attributes")
     require(project_text, [
         "<TargetFrameworks>net48;net8.0-windows</TargetFrameworks>",
-        "<Version>1.4.21</Version>",
+        "<Version>1.4.3</Version>",
         "<UseWindowsForms>true</UseWindowsForms>",
         "<UseWPF>true</UseWPF>",
         '<PackageReference Include="AutoCAD.NET" Version="24.0.0"',
         '<PackageReference Include="AutoCAD.NET" Version="25.0.1"',
     ], "project")
     require(plugin_text, ["IExtensionApplication", "InitializeRibbonSafely", "PluginDiagnostics.Write", 'CommandMethod("BATCHPLOTPLUS"', 'CommandMethod("BATCHPDF"', 'CommandMethod("BATCHWB"', 'CommandMethod("BATCHPLOTDIAG"', "AcApp.ShowModalDialog", "PendingAction.SelectTemplate", "PendingAction.SelectRange", "ResetDocumentSelection", "DwgSplitService.Execute", "AddAllowedClass(typeof(BlockReference)", "AddAllowedClass(typeof(Polyline)"], "command")
+    require((ROOT / "BatchPlotPlus.AutoCAD" / "BatchPlotForm.cs").read_text(encoding="utf-8"), ["列印物件線粗", "列印物件透明度", "自動（依圖框）", "橫向", "直向", "PageOrientation"], "PDF settings UI")
+    require((ROOT / "BatchPlotPlus.AutoCAD" / "PlotService.cs").read_text(encoding="utf-8"), ["ResolvePlotBehavior", "PrintLineweights", "PlotTransparency", "SetPlotRotation"], "plot settings wiring")
     require(ribbon_text, ["ComponentManager.ItemInitialized", "RibbonTab", "RibbonPanel", "RibbonButton", "BatchPlotPlus.RibbonTab", "BATCHPDF ", "BATCHWB ", "return true;", "parameter is RibbonButton button", "button.CommandParameter as string", "SendStringToExecute", "Ribbon tab created successfully.", "Deferred Ribbon creation failed."], "ribbon")
     parameter_index = ribbon_text.index("CommandParameter = command")
     handler_index = ribbon_text.index("button.CommandHandler = CommandHandler")

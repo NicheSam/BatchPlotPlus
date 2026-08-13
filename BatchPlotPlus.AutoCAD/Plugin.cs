@@ -107,7 +107,8 @@ namespace BatchPlotPlus.AutoCAD
                 }
                 catch (System.Exception exception)
                 {
-                    MessageBox.Show(exception.Message, "PDF 輸出失敗", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    var title = State.OperationMode == OperationMode.SplitDwg ? "DWG 拆分失敗" : "PDF 輸出失敗";
+                    MessageBox.Show(exception.Message, title, MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
                 return;
             }

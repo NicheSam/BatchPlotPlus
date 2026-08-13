@@ -32,9 +32,13 @@ namespace BatchPlotPlus.AutoCAD
         private readonly RadioButton _sortHorizontal;
         private readonly RadioButton _sortVertical;
         private readonly CheckBox _reverseOrder;
-        private readonly CheckBox _autoRotate;
+        private readonly RadioButton _orientationAuto;
+        private readonly RadioButton _orientationLandscape;
+        private readonly RadioButton _orientationPortrait;
         private readonly CheckBox _reverseOrientation;
         private readonly CheckBox _centerPlot;
+        private readonly CheckBox _printLineweights;
+        private readonly CheckBox _plotTransparency;
         private readonly TextBox _pdfDirectory;
         private readonly TextBox _mergedName;
         private readonly Label _mergedNameLabel;
@@ -50,7 +54,7 @@ namespace BatchPlotPlus.AutoCAD
         public BatchPlotForm(PluginState state)
         {
             _state = state;
-            Text = "批次輸出工具 Plus V1.4.21";
+            Text = "批次輸出工具 Plus V1.4.3";
             Font = new Font("Microsoft JhengHei UI", 9F, FontStyle.Regular, GraphicsUnit.Point);
             StartPosition = FormStartPosition.CenterScreen;
             FormBorderStyle = FormBorderStyle.FixedDialog;
@@ -131,18 +135,25 @@ namespace BatchPlotPlus.AutoCAD
             scaleGroup.Controls.AddRange(new Control[] { _fit, fixedScale, LabelAt("1:", 90, 50, 18, 20), _scale });
 
             var sortGroup = Group("PDF 頁面排列順序", 438, 158, 290, 112);
-            _sortSelection = Radio("依手動選取順序", 10, 20, 168, state.SortMode == SortMode.Selection);
-            _sortHorizontal = Radio("逐列：左→右、上→下", 10, 47, 180, state.SortMode == SortMode.LeftRightTopBottom);
-            _sortVertical = Radio("逐欄：上→下、左→右", 10, 74, 180, state.SortMode == SortMode.TopBottomLeftRight);
-            _reverseOrder = Check("反轉順序", 198, 20, 80, state.ReverseOrder);
+            _sortSelection = Radio("依手動選取順序", 10, 20, 168, state.PdfSortMode == SortMode.Selection);
+            _sortHorizontal = Radio("逐列：左→右、上→下", 10, 47, 180, state.PdfSortMode == SortMode.LeftRightTopBottom);
+            _sortVertical = Radio("逐欄：上→下、左→右", 10, 74, 180, state.PdfSortMode == SortMode.TopBottomLeftRight);
+            _reverseOrder = Check("反轉順序", 198, 20, 80, state.PdfReverseOrder);
             sortGroup.Controls.AddRange(new Control[] { _sortSelection, _sortHorizontal, _sortVertical, _reverseOrder });
 
-            var orientation = Group("頁面方向與位置", 262, 250, 466, 56);
-            _autoRotate = Check("依圖框自動旋轉", 10, 23, 128, state.AutoRotate);
-            _reverseOrientation = Check("再旋轉 180°", 148, 23, 106, state.ReverseOrientation);
-            _centerPlot = Check("將圖框置中", 264, 23, 100, state.CenterPlot);
-            orientation.Controls.AddRange(new Control[] { _autoRotate, _reverseOrientation, _centerPlot });
-            pdfPage.Controls.AddRange(new Control[] { outputGroup, printGroup, pdfFileGroup, scaleGroup, sortGroup, orientation });
+            var contentGroup = Group("列印內容", 8, 218, 246, 88);
+            _printLineweights = Check("列印物件線粗", 10, 22, 150, state.PrintLineweights);
+            _plotTransparency = Check("列印物件透明度", 10, 50, 150, state.PlotTransparency);
+            contentGroup.Controls.AddRange(new Control[] { _printLineweights, _plotTransparency });
+
+            var orientation = Group("圖紙方向與位置", 262, 250, 466, 56);
+            _orientationAuto = Radio("自動（依圖框）", 10, 23, 112, state.PageOrientation == PageOrientation.Auto);
+            _orientationLandscape = Radio("橫向", 124, 23, 60, state.PageOrientation == PageOrientation.Landscape);
+            _orientationPortrait = Radio("直向", 186, 23, 60, state.PageOrientation == PageOrientation.Portrait);
+            _reverseOrientation = Check("再旋轉 180°", 252, 23, 104, state.ReverseOrientation);
+            _centerPlot = Check("圖框置中", 362, 23, 86, state.CenterPlot);
+            orientation.Controls.AddRange(new Control[] { _orientationAuto, _orientationLandscape, _orientationPortrait, _reverseOrientation, _centerPlot });
+            pdfPage.Controls.AddRange(new Control[] { outputGroup, printGroup, pdfFileGroup, scaleGroup, sortGroup, contentGroup, orientation });
 
             var dwgRules = Group("拆分規則", 8, 8, 350, 186);
             dwgRules.Controls.AddRange(new Control[] {
@@ -173,10 +184,10 @@ namespace BatchPlotPlus.AutoCAD
             });
 
             var dwgSort = Group("DWG 檔名連號順序", 366, 174, 362, 126);
-            _dwgSortSelection = Radio("依手動選取順序", 12, 22, 180, state.SortMode == SortMode.Selection);
-            _dwgSortHorizontal = Radio("逐列：左→右、上→下", 12, 49, 180, state.SortMode == SortMode.LeftRightTopBottom);
-            _dwgSortVertical = Radio("逐欄：上→下、左→右", 12, 76, 180, state.SortMode == SortMode.TopBottomLeftRight);
-            _dwgReverseOrder = Check("反轉順序", 204, 22, 100, state.ReverseOrder);
+            _dwgSortSelection = Radio("依手動選取順序", 12, 22, 180, state.DwgSortMode == SortMode.Selection);
+            _dwgSortHorizontal = Radio("逐列：左→右、上→下", 12, 49, 180, state.DwgSortMode == SortMode.LeftRightTopBottom);
+            _dwgSortVertical = Radio("逐欄：上→下、左→右", 12, 76, 180, state.DwgSortMode == SortMode.TopBottomLeftRight);
+            _dwgReverseOrder = Check("反轉順序", 204, 22, 100, state.DwgReverseOrder);
             dwgSort.Controls.AddRange(new Control[] { _dwgSortSelection, _dwgSortHorizontal, _dwgSortVertical, _dwgReverseOrder });
             dwgPage.Controls.AddRange(new Control[] { dwgRules, dwgOutput, dwgNotice, dwgSort });
 
@@ -242,7 +253,13 @@ namespace BatchPlotPlus.AutoCAD
                 Warn("尚未指定 PDF 儲存資料夾。");
                 return;
             }
-            if (_state.SortMode == SortMode.Selection && _state.ExplicitSheetHandles.Count == 0)
+            if (_state.OperationMode == OperationMode.Pdf && _state.OutputMode == OutputMode.MergedPdf && string.IsNullOrWhiteSpace(_state.MergedFileName))
+            {
+                Warn("合併 PDF 檔名不可留白。");
+                return;
+            }
+            var sortMode = _state.OperationMode == OperationMode.SplitDwg ? _state.DwgSortMode : _state.PdfSortMode;
+            if (sortMode == SortMode.Selection && _state.ExplicitSheetHandles.Count == 0)
             {
                 Warn("若要依手動選取順序排列，請先按「指定要處理的圖框...」。");
                 return;
@@ -277,14 +294,17 @@ namespace BatchPlotPlus.AutoCAD
             _state.Copies = (int)_copies.Value;
             _state.FitToPaper = _fit.Checked;
             _state.FixedScale = (double)_scale.Value;
-            var splitDwg = _tabs.SelectedIndex == 1;
-            _state.SortMode = splitDwg
-                ? (_dwgSortSelection.Checked ? SortMode.Selection : (_dwgSortVertical.Checked ? SortMode.TopBottomLeftRight : SortMode.LeftRightTopBottom))
-                : (_sortSelection.Checked ? SortMode.Selection : (_sortVertical.Checked ? SortMode.TopBottomLeftRight : SortMode.LeftRightTopBottom));
-            _state.ReverseOrder = splitDwg ? _dwgReverseOrder.Checked : _reverseOrder.Checked;
-            _state.AutoRotate = _autoRotate.Checked;
+            _state.PdfSortMode = _sortSelection.Checked ? SortMode.Selection : (_sortVertical.Checked ? SortMode.TopBottomLeftRight : SortMode.LeftRightTopBottom);
+            _state.PdfReverseOrder = _reverseOrder.Checked;
+            _state.DwgSortMode = _dwgSortSelection.Checked ? SortMode.Selection : (_dwgSortVertical.Checked ? SortMode.TopBottomLeftRight : SortMode.LeftRightTopBottom);
+            _state.DwgReverseOrder = _dwgReverseOrder.Checked;
+            _state.PageOrientation = _orientationLandscape.Checked
+                ? PageOrientation.Landscape
+                : (_orientationPortrait.Checked ? PageOrientation.Portrait : PageOrientation.Auto);
             _state.ReverseOrientation = _reverseOrientation.Checked;
             _state.CenterPlot = _centerPlot.Checked;
+            _state.PrintLineweights = _printLineweights.Checked;
+            _state.PlotTransparency = _plotTransparency.Checked;
             _state.OutputDirectory = _pdfDirectory.Text.Trim();
             _state.MergedFileName = _mergedName.Text.Trim();
             _state.DwgOutputDirectory = _dwgDirectory.Text.Trim();
@@ -305,7 +325,7 @@ namespace BatchPlotPlus.AutoCAD
         {
             var text = _tabs.SelectedIndex == 1
                 ? "先選取代表性的圖框圖塊，設定範圍、連號前綴、順序與資料夾，再按「開始拆分 DWG」。沒有圖名屬性時會使用前綴加連號。第一次建議只拆前 2 張。"
-                : "先設定共用圖框條件，再設定 PDF 檔案、頁面與排列順序，最後按「開始輸出 PDF」。";
+                : "先設定共用圖框條件，再設定 PDF 檔案、頁面、出圖樣式、線粗、透明度、方向與排列順序，最後按「開始輸出 PDF」。";
             MessageBox.Show(text, "批次輸出工具 Plus");
         }
 

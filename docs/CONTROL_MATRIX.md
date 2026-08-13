@@ -1,4 +1,4 @@
-# BatchPlotPlus 1.4.21 control-to-behavior and wording review
+# BatchPlotPlus 1.4.3 control-to-behavior and wording review
 
 Every enabled input below has a state write and a downstream consumer. Informational labels are marked as display-only. Unsupported legacy controls were removed instead of being left disabled or unconnected.
 
@@ -18,15 +18,17 @@ The common frame conditions are shared by both tabs. The PDF tab owns page/file 
 | Use all frames | Clears handles | Returns frame discovery to all matching model-space candidates | Connected |
 | PDF device | `Device` | Passed to `SetPlotConfigurationName`; list comes from AutoCAD and is PDF-filtered | Connected |
 | Paper size | `Paper` | Resolves a matching canonical media name | Connected |
-| Plot style | `PlotStyle` | Applies CTB/STB; a failure is reported instead of ignored | Connected |
+| Plot style | `PlotStyle` | Applies CTB/STB; selecting None explicitly disables plot styles; a failure is reported instead of ignored | Connected |
 | Copies | `Copies` | Repeats pages/files in the requested count | Connected |
 | Range status | Display-only | Shows whether the model-space range filter is active | Informational |
 | Auto-fit paper / fixed scale | `FitToPaper`, `FixedScale` | Uses `ScaleToFit` or `CustomScale` | Connected |
-| Manual selection order | `SortMode.Selection` | Uses explicit selection order; blocked if no selection exists | Connected |
-| By row: left to right, top to bottom | `SortMode.LeftRightTopBottom` | Groups rows with tolerance, then sorts each row left to right | Connected |
-| By column: top to bottom, left to right | `SortMode.TopBottomLeftRight` | Groups columns with tolerance, then sorts each column top to bottom | Connected |
-| Reverse order | `ReverseOrder` | Reverses the final PDF page sequence | Connected |
-| Rotate to match frame | `AutoRotate` | Selects portrait/landscape rotation from frame proportions | Connected |
+| Manual selection order | `PdfSortMode.Selection` | Uses explicit selection order; blocked if no selection exists | Connected |
+| By row: left to right, top to bottom | `PdfSortMode.LeftRightTopBottom` | Groups rows with tolerance, then sorts each row left to right | Connected |
+| By column: top to bottom, left to right | `PdfSortMode.TopBottomLeftRight` | Groups columns with tolerance, then sorts each column top to bottom | Connected |
+| Reverse order | `PdfReverseOrder` | Reverses the final PDF page sequence | Connected |
+| Print object lineweights | `PrintLineweights` | Writes the user's choice to `PlotSettings.PrintLineweights` | Connected |
+| Print object transparency | `PlotTransparency` | Writes the user's choice to `PlotSettings.PlotTransparency` | Connected |
+| Auto / landscape / portrait | `PageOrientation` | Resolves 0, 90, 180, or 270 degree plot rotation from the requested direction and frame proportions | Connected |
 | Rotate another 180 degrees | `ReverseOrientation` | Adds 180 degrees to the selected orientation | Connected |
 | Center the frame | `CenterPlot` | Controls `SetPlotCentered` | Connected |
 | Output directory / browse | `OutputDirectory` | Creates the directory and writes output files there | Connected |
@@ -38,7 +40,7 @@ The common frame conditions are shared by both tabs. The PDF tab owns page/file 
 | PDF / Split DWG tabs | `OperationMode` | Dispatches to `PlotService.Execute` or `DwgSplitService.Execute` | Connected |
 | DWG output directory | `DwgOutputDirectory` | Creates and saves individual DWG files in this directory | Connected |
 | DWG sequence prefix | `DwgFilePrefix` | Names frames without drawing-name attributes as prefix + sorted one-based index | Connected |
-| DWG sequence order | `SortMode`, `ReverseOrder` | Applies manual, row-first, column-first, or reversed order before assigning fallback numbers | Connected |
+| DWG sequence order | `DwgSortMode`, `DwgReverseOrder` | Applies manual, row-first, column-first, or reversed order before assigning fallback numbers; PDF order remains unchanged | Connected |
 | Test first two frames | `DwgTestFirstTwo` | Limits the sorted DWG frame list to two items | Connected |
 | Start Split DWG | Validation + execute | Requires a matching block template, model space, and a DWG directory; drawing-name attributes are optional | Connected |
 
@@ -54,4 +56,4 @@ These were visible but did not have complete behavior. Keeping them would have m
 
 ## Runtime gate
 
-Static review, compilation, and offline UI rendering do not prove AutoCAD plotting behavior. The remaining runtime checks are: bundle command loading, block/polyline prompting, plot device/media resolution, one separate PDF sample, one 2-3 page merged PDF sample, page order, source drawing preservation, and plot-state restoration after success or failure.
+Static review, compilation, and offline UI rendering do not prove AutoCAD plotting behavior. The deployed R24 DLL and `BATCHPLOTDIAG` were loaded from ProgramData in AutoCAD 2023 Core Console. Desktop Ribbon auto-discovery and the new lineweight/transparency/orientation combinations still require an interactive AutoCAD plot sample.
