@@ -4,9 +4,9 @@ BatchPlotPlus 是供 AutoCAD 2021–2025（Windows 64 位元）使用的繁體�
 
 它把「批次輸出多頁 PDF」與「依圖框拆分 DWG」整合在同一個視窗與 Ribbon 頁籤，並以不儲存來源圖面變更為原則執行暫時性出圖處理。
 
-![PDF 輸出頁籤](ui-preview/PDF-tab.png)
+![PDF 輸出頁籤 v1.4.4](ui-preview/PDF-tab-v1.4.4.png)
 
-![拆分 DWG 頁籤](ui-preview/DWG-tab.png)
+![拆分 DWG 頁籤 v1.4.4](ui-preview/DWG-tab-v1.4.4.png)
 
 ## 主要功能
 
