@@ -75,6 +75,15 @@ internal static class Program
         Check(!behavior.PrintLineweights, "plot behavior disables lineweights");
         Check(behavior.PlotTransparency, "plot behavior enables transparency");
 
+        Check(BatchLogic.TryGetPaperMillimeters("A3", out var a3Width, out var a3Height) && a3Width == 297 && a3Height == 420, "A3 paper dimensions");
+        Check(BatchLogic.TryGetPaperMillimeters("A4", out var a4Width, out var a4Height) && a4Width == 210 && a4Height == 297, "A4 paper dimensions");
+        Check(!BatchLogic.TryGetPaperMillimeters("Custom", out var defaultWidth, out var defaultHeight) && defaultWidth == 297 && defaultHeight == 420, "unknown paper fallback");
+
+        var window = BatchLogic.NormalizePlotWindow(10, 20, -5, 3);
+        Check(window.MinX == -5 && window.MinY == 3 && window.MaxX == 10 && window.MaxY == 20, "normalize reversed plot window");
+        ExpectInvalid(() => BatchLogic.NormalizePlotWindow(1, 1, 1, 2), "reject zero-width plot window");
+        ExpectInvalid(() => BatchLogic.NormalizePlotWindow(double.NaN, 1, 2, 3), "reject non-finite plot window");
+
         Console.WriteLine("Logic tests passed: " + _checks);
     }
 
@@ -88,6 +97,20 @@ internal static class Program
     };
 
     private static string Order(IEnumerable<SheetOrderItem> frames) => string.Join(",", frames.Select(frame => frame.Key));
+
+    private static void ExpectInvalid(Action action, string name)
+    {
+        try
+        {
+            action();
+        }
+        catch (InvalidOperationException)
+        {
+            _checks++;
+            return;
+        }
+        throw new InvalidOperationException("Failed: " + name);
+    }
 
     private static void Check(bool condition, string name)
     {

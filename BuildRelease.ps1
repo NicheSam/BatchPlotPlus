@@ -6,8 +6,8 @@ $logicProject = Join-Path $projectRoot "LogicTests\BatchPlotPlus.LogicTests.cspr
 $bundle = Join-Path $projectRoot "Bundle\BatchPlotPlus.bundle"
 $releaseRoot = Join-Path $projectRoot "release"
 $releaseBundle = Join-Path $releaseRoot "BatchPlotPlus.bundle"
-$releaseZip = Join-Path $releaseRoot "BatchPlotPlus-1.4.3.zip"
-$installerZip = Join-Path $releaseRoot "BatchPlotPlus-1.4.3-installer.zip"
+$releaseZip = Join-Path $releaseRoot "BatchPlotPlus-1.4.4.zip"
+$installerZip = Join-Path $releaseRoot "BatchPlotPlus-1.4.4-installer.zip"
 $installerStage = Join-Path $releaseRoot "_installer"
 $r24Output = Join-Path $projectRoot "BatchPlotPlus.AutoCAD\bin\Release\net48\BatchPlotPlus.AutoCAD.dll"
 $r25Output = Join-Path $projectRoot "BatchPlotPlus.AutoCAD\bin\Release\net8.0-windows\BatchPlotPlus.AutoCAD.dll"
@@ -57,6 +57,6 @@ Remove-Item -LiteralPath $installerStage -Recurse -Force
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File (Join-Path $projectRoot "tools\test_installer_paths.ps1") -InstallerZip $installerZip
 if ($LASTEXITCODE -ne 0) { throw "Installer path tests failed." }
 
-Write-Output "BatchPlotPlus 1.4.3 release created."
+Write-Output "BatchPlotPlus 1.4.4 release created."
 Write-Output $releaseZip
 Write-Output $installerZip

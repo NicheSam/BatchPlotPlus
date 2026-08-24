@@ -1,6 +1,6 @@
 @echo off
 setlocal EnableExtensions DisableDelayedExpansion
-title BatchPlotPlus 1.4.3 Installer
+title BatchPlotPlus 1.4.4 Installer
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%~dp0InstallOrUpdate.ps1" %*
 set "INSTALL_EXIT=%ERRORLEVEL%"
 echo.

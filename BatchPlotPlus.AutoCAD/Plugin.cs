@@ -66,6 +66,7 @@ namespace BatchPlotPlus.AutoCAD
         [CommandMethod("BATCHPLOTDIAG", CommandFlags.Modal)]
         public void DiagnoseInstallation()
         {
+            RibbonService.EnsureVisible();
             var document = AcApp.DocumentManager.MdiActiveDocument;
             var report = PluginDiagnostics.BuildLoadedReport();
             PluginDiagnostics.Write("Loaded diagnostic requested.\n" + report);
@@ -75,6 +76,7 @@ namespace BatchPlotPlus.AutoCAD
 
         private static void Run()
         {
+            RibbonService.EnsureVisible();
             var document = AcApp.DocumentManager.MdiActiveDocument;
             if (document == null) return;
             var documentKey = document.Database.FingerprintGuid.ToString();
@@ -94,7 +96,7 @@ namespace BatchPlotPlus.AutoCAD
                     var result = AcApp.ShowModalDialog(form);
                     if (result == DialogResult.Retry)
                     {
-                        HandlePendingAction(document.Editor, document.Database);
+                        HandlePendingAction(document);
                         continue;
                     }
                     if (result != DialogResult.OK) return;
@@ -108,10 +110,25 @@ namespace BatchPlotPlus.AutoCAD
                 catch (System.Exception exception)
                 {
                     var title = State.OperationMode == OperationMode.SplitDwg ? "DWG 拆分失敗" : "PDF 輸出失敗";
-                    MessageBox.Show(exception.Message, title, MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    PluginDiagnostics.Write(title, exception);
+                    MessageBox.Show(FormatExceptionMessage(exception), title, MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
                 return;
             }
+        }
+
+        private static string FormatExceptionMessage(System.Exception exception)
+        {
+            var message = exception.Message;
+            var inner = exception.InnerException;
+            while (inner != null)
+            {
+                if (!string.IsNullOrWhiteSpace(inner.Message) &&
+                    message.IndexOf(inner.Message, StringComparison.OrdinalIgnoreCase) < 0)
+                    message += Environment.NewLine + "\u539f\u56e0\uff1a" + inner.Message;
+                inner = inner.InnerException;
+            }
+            return message;
         }
 
         private static void RefreshPlotChoices(Database database)
@@ -164,8 +181,10 @@ namespace BatchPlotPlus.AutoCAD
             catch { State.MatchingFrameCount = -1; }
         }
 
-        private static void HandlePendingAction(Editor editor, Database database)
+        private static void HandlePendingAction(Autodesk.AutoCAD.ApplicationServices.Document document)
         {
+            var editor = document.Editor;
+            var database = document.Database;
             var action = State.PendingAction;
             State.PendingAction = PendingAction.None;
             if (action == PendingAction.ClearRange)
@@ -175,6 +194,18 @@ namespace BatchPlotPlus.AutoCAD
             else if (action == PendingAction.ClearSheets)
             {
                 State.ExplicitSheetHandles.Clear();
+            }
+            else if (action == PendingAction.PreviewPdf)
+            {
+                try
+                {
+                    PlotService.ShowPreview(document, State);
+                }
+                catch (System.Exception exception)
+                {
+                    PluginDiagnostics.Write("輸出預覽失敗", exception);
+                    MessageBox.Show(FormatExceptionMessage(exception), "輸出預覽失敗", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
             }
             else if (action == PendingAction.SelectTemplate)
             {

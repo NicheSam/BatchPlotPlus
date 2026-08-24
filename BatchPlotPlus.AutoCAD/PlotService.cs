@@ -16,6 +16,8 @@ namespace BatchPlotPlus.AutoCAD
 {
     internal static class PlotService
     {
+        private const int MaxPreviewSegmentsPerSheet = 1200;
+
         public static string DescribeTemplate(Database database, ObjectId id, out string layer)
         {
             using (var transaction = database.TransactionManager.StartOpenCloseTransaction())
@@ -228,19 +230,291 @@ namespace BatchPlotPlus.AutoCAD
             return BatchLogic.Sort(items, mode, reverse).Select(item => byKey[item.Key]).ToList();
         }
 
+        internal static void ShowPreview(Document document, PluginState state)
+        {
+            var frames = CollectFrames(document.Database, state);
+            if (frames.Count == 0) throw new InvalidOperationException("找不到符合圖框樣板、搜尋圖層與範圍的圖框。");
+            frames = SortFrames(frames, state);
+            if (state.Copies > 1)
+                frames = Enumerable.Range(0, state.Copies).SelectMany(_ => frames).ToList();
+            var items = BuildPreviewItems(document, state, frames);
+            using (var form = new PlotPreviewForm(items))
+                AcApp.ShowModalDialog(form);
+        }
+
+        internal static List<PlotPreviewItem> BuildPreviewItems(Document document, PluginState state, IList<FrameInfo> frames)
+        {
+            var worldToDisplay = GetWorldToDisplay(document);
+            BatchLogic.TryGetPaperMillimeters(state.Paper, out var paperWidth, out var paperHeight);
+            var frameIds = new HashSet<ObjectId>(frames.Select(frame => frame.Id));
+            var previewSources = BuildPreviewSources(document.Database, worldToDisplay, frameIds);
+            var items = new List<PlotPreviewItem>();
+            for (var index = 0; index < frames.Count; index++)
+            {
+                var frame = frames[index];
+                var plotExtents = frame.Extents;
+                plotExtents.TransformBy(worldToDisplay);
+                var min = plotExtents.MinPoint;
+                var max = plotExtents.MaxPoint;
+                var window = BatchLogic.NormalizePlotWindow(min.X, min.Y, max.X, max.Y);
+                var frameWidth = window.MaxX - window.MinX;
+                var frameHeight = window.MaxY - window.MinY;
+                var frameIsLandscape = frameWidth >= frameHeight;
+                var behavior = BatchLogic.ResolvePlotBehavior(state, frameIsLandscape);
+                var pageLandscape = behavior.RotationDegrees == 90 || behavior.RotationDegrees == 270;
+                var previewItem = new PlotPreviewItem
+                {
+                    PageNumber = index + 1,
+                    FileBase = frame.FileBase,
+                    Device = state.Device,
+                    Paper = state.Paper,
+                    PlotStyle = state.PlotStyle,
+                    OrientationLabel = pageLandscape ? "橫向" : "直向",
+                    RotationDegrees = behavior.RotationDegrees,
+                    ScaleLabel = state.FitToPaper ? "自動配合紙張" : "1:" + state.FixedScale.ToString("0.###", CultureInfo.InvariantCulture),
+                    FrameSizeLabel = frameWidth.ToString("0.###", CultureInfo.InvariantCulture) + "×" + frameHeight.ToString("0.###", CultureInfo.InvariantCulture),
+                    WindowLabel = FormatWindow(window),
+                    WindowMinX = window.MinX,
+                    WindowMinY = window.MinY,
+                    FrameWidth = frameWidth,
+                    FrameHeight = frameHeight,
+                    PageWidth = pageLandscape ? paperHeight : paperWidth,
+                    PageHeight = pageLandscape ? paperWidth : paperHeight,
+                    PrintLineweights = behavior.PrintLineweights,
+                    PlotTransparency = behavior.PlotTransparency
+                };
+                AddContentPreview(previewItem, window, previewSources);
+                items.Add(previewItem);
+            }
+            return items;
+        }
+
+        private static List<PreviewSource> BuildPreviewSources(Database database, Matrix3d worldToDisplay, ISet<ObjectId> frameIds)
+        {
+            var sources = new List<PreviewSource>();
+            using (var transaction = database.TransactionManager.StartOpenCloseTransaction())
+            {
+                var ids = ReadModelSpaceIds(database, transaction);
+                foreach (var id in ids)
+                {
+                    if (frameIds.Contains(id)) continue;
+                    var entity = transaction.GetObject(id, OpenMode.ForRead, false) as Entity;
+                    if (entity == null) continue;
+                    Extents3d extents;
+                    try { extents = entity.GeometricExtents; }
+                    catch { continue; }
+                    extents.TransformBy(worldToDisplay);
+                    var bounds = NormalizePreviewBounds(extents.MinPoint.X, extents.MinPoint.Y, extents.MaxPoint.X, extents.MaxPoint.Y);
+                    var colorArgb = ResolvePreviewColor(entity, transaction);
+                    var segments = BuildEntityPreviewSegments(entity, worldToDisplay, bounds, colorArgb);
+                    if (segments.Count == 0) AddBoundsSegments(segments, bounds, colorArgb);
+                    sources.Add(new PreviewSource(id, bounds, segments));
+                }
+            }
+            return sources;
+        }
+
+        private static PlotWindowBounds NormalizePreviewBounds(double x1, double y1, double x2, double y2)
+        {
+            if (!IsFinite(x1) || !IsFinite(y1) || !IsFinite(x2) || !IsFinite(y2))
+                return new PlotWindowBounds(0.0, 0.0, 1.0, 1.0);
+
+            var minX = Math.Min(x1, x2);
+            var minY = Math.Min(y1, y2);
+            var maxX = Math.Max(x1, x2);
+            var maxY = Math.Max(y1, y2);
+            var width = maxX - minX;
+            var height = maxY - minY;
+            var pad = Math.Max(Math.Max(Math.Abs(width), Math.Abs(height)) * 0.001, 1e-4);
+            if (Math.Abs(width) < 1e-8)
+            {
+                minX -= pad;
+                maxX += pad;
+            }
+            if (Math.Abs(height) < 1e-8)
+            {
+                minY -= pad;
+                maxY += pad;
+            }
+            return new PlotWindowBounds(minX, minY, maxX, maxY);
+        }
+
+        private static List<PlotPreviewSegment> BuildEntityPreviewSegments(Entity entity, Matrix3d worldToDisplay, PlotWindowBounds bounds, int colorArgb)
+        {
+            var segments = new List<PlotPreviewSegment>();
+            var line = entity as Line;
+            if (line != null)
+            {
+                AddSegment(segments, line.StartPoint, line.EndPoint, worldToDisplay, colorArgb);
+                return segments;
+            }
+            var polyline = entity as Polyline;
+            if (polyline != null)
+            {
+                var count = Math.Min(polyline.NumberOfVertices, 250);
+                for (var i = 1; i < count; i++) AddSegment(segments, polyline.GetPoint3dAt(i - 1), polyline.GetPoint3dAt(i), worldToDisplay, colorArgb);
+                if (polyline.Closed && count > 1) AddSegment(segments, polyline.GetPoint3dAt(count - 1), polyline.GetPoint3dAt(0), worldToDisplay, colorArgb);
+                return segments;
+            }
+            var circle = entity as Circle;
+            if (circle != null)
+            {
+                AddArcSegments(segments, circle.Center, circle.Radius, 0.0, Math.PI * 2.0, worldToDisplay, 48, colorArgb);
+                return segments;
+            }
+            var arc = entity as Arc;
+            if (arc != null)
+            {
+                var start = arc.StartAngle;
+                var end = arc.EndAngle;
+                while (end < start) end += Math.PI * 2.0;
+                AddArcSegments(segments, arc.Center, arc.Radius, start, end, worldToDisplay, 32, colorArgb);
+                return segments;
+            }
+            AddBoundsSegments(segments, bounds, colorArgb);
+            return segments;
+        }
+
+        private static void AddArcSegments(ICollection<PlotPreviewSegment> segments, Point3d center, double radius, double startAngle, double endAngle, Matrix3d transform, int steps, int colorArgb)
+        {
+            var sweep = Math.Max(1e-9, endAngle - startAngle);
+            var segmentCount = Math.Max(4, Math.Min(steps, (int)Math.Ceiling(sweep / (Math.PI / 12.0))));
+            Point3d? previous = null;
+            for (var i = 0; i <= segmentCount; i++)
+            {
+                var angle = startAngle + sweep * i / segmentCount;
+                var point = new Point3d(center.X + Math.Cos(angle) * radius, center.Y + Math.Sin(angle) * radius, center.Z);
+                if (previous.HasValue) AddSegment(segments, previous.Value, point, transform, colorArgb);
+                previous = point;
+            }
+        }
+
+        private static void AddSegment(ICollection<PlotPreviewSegment> segments, Point3d start, Point3d end, Matrix3d transform, int colorArgb)
+        {
+            start = start.TransformBy(transform);
+            end = end.TransformBy(transform);
+            if (!IsFinite(start.X) || !IsFinite(start.Y) || !IsFinite(end.X) || !IsFinite(end.Y)) return;
+            segments.Add(new PlotPreviewSegment(start.X, start.Y, end.X, end.Y, colorArgb));
+        }
+
+        private static void AddBoundsSegments(ICollection<PlotPreviewSegment> segments, PlotWindowBounds bounds, int colorArgb)
+        {
+            segments.Add(new PlotPreviewSegment(bounds.MinX, bounds.MinY, bounds.MaxX, bounds.MinY, colorArgb));
+            segments.Add(new PlotPreviewSegment(bounds.MaxX, bounds.MinY, bounds.MaxX, bounds.MaxY, colorArgb));
+            segments.Add(new PlotPreviewSegment(bounds.MaxX, bounds.MaxY, bounds.MinX, bounds.MaxY, colorArgb));
+            segments.Add(new PlotPreviewSegment(bounds.MinX, bounds.MaxY, bounds.MinX, bounds.MinY, colorArgb));
+        }
+
+        private static int ResolvePreviewColor(Entity entity, Transaction transaction)
+        {
+            try
+            {
+                var color = entity.Color;
+                if (color != null && color.ColorMethod == ColorMethod.ByColor)
+                    return color.ColorValue.ToArgb();
+                if (color != null && color.ColorMethod == ColorMethod.ByAci && color.ColorIndex > 0 && color.ColorIndex < 256)
+                    return AciToArgb(color.ColorIndex);
+                if (!entity.LayerId.IsNull)
+                {
+                    var layer = transaction.GetObject(entity.LayerId, OpenMode.ForRead, false) as LayerTableRecord;
+                    var layerColor = layer?.Color;
+                    if (layerColor != null && layerColor.ColorMethod == ColorMethod.ByColor)
+                        return layerColor.ColorValue.ToArgb();
+                    if (layerColor != null && layerColor.ColorIndex > 0 && layerColor.ColorIndex < 256)
+                        return AciToArgb(layerColor.ColorIndex);
+                }
+            }
+            catch (System.Exception)
+            {
+                return AciToArgb(7);
+            }
+            return AciToArgb(7);
+        }
+
+        private static int AciToArgb(int index)
+        {
+            switch (index)
+            {
+                case 1: return unchecked((int)0xFFFF0000);
+                case 2: return unchecked((int)0xFFFFFF00);
+                case 3: return unchecked((int)0xFF00FF00);
+                case 4: return unchecked((int)0xFF00FFFF);
+                case 5: return unchecked((int)0xFF0000FF);
+                case 6: return unchecked((int)0xFFFF00FF);
+                case 8: return unchecked((int)0xFF606060);
+                case 9: return unchecked((int)0xFFB0B0B0);
+                default: return unchecked((int)0xFF000000);
+            }
+        }
+
+        private static void AddContentPreview(PlotPreviewItem item, PlotWindowBounds window, IEnumerable<PreviewSource> sources)
+        {
+            foreach (var source in sources)
+            {
+                if (!Intersects(source.Bounds, window)) continue;
+                item.ContentEntityCount++;
+                foreach (var segment in source.Segments)
+                {
+                    if (!Intersects(segment, window)) continue;
+                    if (item.ContentSegments.Count >= MaxPreviewSegmentsPerSheet)
+                    {
+                        item.ContentPreviewTruncated = true;
+                        return;
+                    }
+                    item.ContentSegments.Add(segment);
+                }
+            }
+        }
+
+        private static bool Intersects(PlotWindowBounds left, PlotWindowBounds right)
+        {
+            return left.MinX <= right.MaxX && left.MaxX >= right.MinX && left.MinY <= right.MaxY && left.MaxY >= right.MinY;
+        }
+
+        private static bool Intersects(PlotPreviewSegment segment, PlotWindowBounds window)
+        {
+            var minX = Math.Min(segment.X1, segment.X2);
+            var maxX = Math.Max(segment.X1, segment.X2);
+            var minY = Math.Min(segment.Y1, segment.Y2);
+            var maxY = Math.Max(segment.Y1, segment.Y2);
+            return minX <= window.MaxX && maxX >= window.MinX && minY <= window.MaxY && maxY >= window.MinY;
+        }
+
+        private static bool IsFinite(double value)
+        {
+            return !double.IsNaN(value) && !double.IsInfinity(value);
+        }
+
+        private sealed class PreviewSource
+        {
+            public PreviewSource(ObjectId id, PlotWindowBounds bounds, List<PlotPreviewSegment> segments)
+            {
+                Id = id;
+                Bounds = bounds;
+                Segments = segments;
+            }
+            public ObjectId Id { get; }
+            public PlotWindowBounds Bounds { get; }
+            public List<PlotPreviewSegment> Segments { get; }
+        }
+
+        private static Matrix3d GetWorldToDisplay(Document document)
+        {
+            using (var view = document.Editor.GetCurrentView())
+            {
+                var worldToDisplay = Matrix3d.PlaneToWorld(view.ViewDirection);
+                worldToDisplay = Matrix3d.Displacement(view.Target - Point3d.Origin) * worldToDisplay;
+                worldToDisplay = Matrix3d.Rotation(-view.ViewTwist, view.ViewDirection, view.Target) * worldToDisplay;
+                return worldToDisplay.Inverse();
+            }
+        }
+
         internal static void PlotPages(Document document, PluginState state, IList<FrameInfo> frames, string outputPath, string media)
         {
             Transaction? monochromeOverride = null;
             try
             {
-                Matrix3d worldToDisplay;
-                using (var view = document.Editor.GetCurrentView())
-                {
-                    worldToDisplay = Matrix3d.PlaneToWorld(view.ViewDirection);
-                    worldToDisplay = Matrix3d.Displacement(view.Target - Point3d.Origin) * worldToDisplay;
-                    worldToDisplay = Matrix3d.Rotation(-view.ViewTwist, view.ViewDirection, view.Target) * worldToDisplay;
-                    worldToDisplay = worldToDisplay.Inverse();
-                }
+                var worldToDisplay = GetWorldToDisplay(document);
 
                 using (var transaction = document.Database.TransactionManager.StartTransaction())
                 {
@@ -427,8 +701,16 @@ namespace BatchPlotPlus.AutoCAD
             plotExtents.TransformBy(worldToDisplay);
             var min = plotExtents.MinPoint;
             var max = plotExtents.MaxPoint;
-            validator.SetPlotType(settings, Autodesk.AutoCAD.DatabaseServices.PlotType.Window);
-            validator.SetPlotWindowArea(settings, new Extents2d(min.X, min.Y, max.X, max.Y));
+            var window = BatchLogic.NormalizePlotWindow(min.X, min.Y, max.X, max.Y);
+            try
+            {
+                validator.SetPlotWindowArea(settings, new Extents2d(window.MinX, window.MinY, window.MaxX, window.MaxY));
+                validator.SetPlotType(settings, Autodesk.AutoCAD.DatabaseServices.PlotType.Window);
+            }
+            catch (System.Exception exception)
+            {
+                throw new InvalidOperationException("\u8a2d\u5b9a\u51fa\u5716\u8996\u7a97\u7bc4\u570d\u5931\u6557\u3002\u5716\u6846\uff1a" + frame.FileBase + "\uff1b\u7bc4\u570d\uff1a" + FormatWindow(window) + "\u3002", exception);
+            }
             validator.SetPlotCentered(settings, state.CenterPlot);
             validator.SetUseStandardScale(settings, state.FitToPaper);
             if (state.FitToPaper)
@@ -451,10 +733,17 @@ namespace BatchPlotPlus.AutoCAD
             {
                 settings.PlotPlotStyles = false;
             }
-            var frameIsLandscape = (max.X - min.X) >= (max.Y - min.Y);
+            var frameIsLandscape = (window.MaxX - window.MinX) >= (window.MaxY - window.MinY);
             var behavior = BatchLogic.ResolvePlotBehavior(state, frameIsLandscape);
-            settings.PrintLineweights = behavior.PrintLineweights;
-            settings.PlotTransparency = behavior.PlotTransparency;
+            try
+            {
+                settings.PrintLineweights = behavior.PrintLineweights;
+                settings.PlotTransparency = behavior.PlotTransparency;
+            }
+            catch (System.Exception exception)
+            {
+                throw new InvalidOperationException("\u5957\u7528\u5217\u5370\u5167\u5bb9\u8a2d\u5b9a\u5931\u6557\u3002\u7dda\u7c97\uff1a" + state.PrintLineweights.ToString(CultureInfo.InvariantCulture) + "\uff1b\u900f\u660e\u5ea6\uff1a" + state.PlotTransparency.ToString(CultureInfo.InvariantCulture) + "\u3002", exception);
+            }
             var rotation = behavior.RotationDegrees == 90
                 ? PlotRotation.Degrees090
                 : behavior.RotationDegrees == 180
@@ -462,7 +751,14 @@ namespace BatchPlotPlus.AutoCAD
                     : behavior.RotationDegrees == 270
                         ? PlotRotation.Degrees270
                         : PlotRotation.Degrees000;
-            validator.SetPlotRotation(settings, rotation);
+            try
+            {
+                validator.SetPlotRotation(settings, rotation);
+            }
+            catch (System.Exception exception)
+            {
+                throw new InvalidOperationException("\u8a2d\u5b9a\u5716\u7d19\u65b9\u5411\u5931\u6557\u3002\u65cb\u8f49\u89d2\u5ea6\uff1a" + behavior.RotationDegrees.ToString(CultureInfo.InvariantCulture) + "\u3002", exception);
+            }
             var info = new PlotInfo { Layout = layout.ObjectId, OverrideSettings = settings };
             PlotInfoValidator? infoValidator = null;
             try
@@ -472,13 +768,22 @@ namespace BatchPlotPlus.AutoCAD
                 infoValidators.Add(infoValidator);
                 return info;
             }
-            catch
+            catch (System.Exception exception)
             {
                 infoValidator?.Dispose();
                 info.OverrideSettings?.Dispose();
                 info.Dispose();
-                throw;
+                var style = string.IsNullOrWhiteSpace(state.PlotStyle) ? "\u7121" : state.PlotStyle;
+                throw new InvalidOperationException("AutoCAD \u9a57\u8b49\u51fa\u5716\u8a2d\u5b9a\u5931\u6557\u3002\u5716\u6846\uff1a" + frame.FileBase + "\uff1b\u88dd\u7f6e\uff1a" + state.Device + "\uff1b\u7d19\u5f35\uff1a" + state.Paper + "\uff1b\u6a23\u5f0f\uff1a" + style + "\uff1b\u7bc4\u570d\uff1a" + FormatWindow(window) + "\u3002", exception);
             }
+        }
+
+        private static string FormatWindow(PlotWindowBounds window)
+        {
+            return window.MinX.ToString("0.###", CultureInfo.InvariantCulture) + "," +
+                window.MinY.ToString("0.###", CultureInfo.InvariantCulture) + " - " +
+                window.MaxX.ToString("0.###", CultureInfo.InvariantCulture) + "," +
+                window.MaxY.ToString("0.###", CultureInfo.InvariantCulture);
         }
 
         private static string? FindMedia(IEnumerable<string> names, string paper)

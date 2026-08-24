@@ -17,9 +17,9 @@ def main() -> int:
     entries = manifest.findall("./Components/ComponentEntry")
     require(len(entries) == 2, "expected two version-routed components")
     for entry in entries:
-        require(entry.attrib.get("LoadReasons") == "LoadOnAutoCADStartup", "official startup load reason is missing")
-        require("LoadOnAutoCADStartup" not in entry.attrib, "startup load reason is written as a nonstandard standalone attribute")
-        require("LoadOnCommandInvocation" not in entry.attrib, "command load reason is written as a nonstandard standalone attribute")
+        require(entry.attrib.get("LoadOnAutoCADStartup") == "True", "startup load reason is missing")
+        require(entry.attrib.get("LoadOnCommandInvocation") == "True", "command demand-load reason is missing")
+        require("LoadReasons" not in entry.attrib, "ambiguous LoadReasons attribute is still present")
         commands = {item.attrib.get("Global") for item in entry.findall("./Commands/Command")}
         require(
             {"BATCHPLOTPLUS", "BATCHPDF", "BATCHWB", "BATCHPLOTDIAG"}.issubset(commands),

@@ -1,6 +1,6 @@
 # BatchPlotPlus
 
-BatchPlotPlus 是供 AutoCAD 2021–2025（Windows 64 位元）使用的繁體中文批次出圖工具。目前版本為 **1.4.3**。
+BatchPlotPlus 是供 AutoCAD 2021–2025（Windows 64 位元）使用的繁體中文批次出圖工具。目前版本為 **1.4.4**。
 
 它把「批次輸出多頁 PDF」與「依圖框拆分 DWG」整合在同一個視窗與 Ribbon 頁籤，並以不儲存來源圖面變更為原則執行暫時性出圖處理。
 
@@ -18,6 +18,13 @@ BatchPlotPlus 是供 AutoCAD 2021–2025（Windows 64 位元）使用的繁體�
 - 使用 `monochrome` 時，在未提交的 AutoCAD transaction 中暫時處理 True Color／命名樣式顏色，出圖後回復。
 - 依圖框批次拆分 DWG，並提供先測試前 2 張的安全選項。
 - 自動載入「批次輸出工具」Ribbon 頁籤。
+
+## 1.4.4 更新
+
+- 修正「輸出預覽」在自動配合紙張時看起來過小的問題；預覽圖框現在貼近可列印區域，較接近實際出圖比例。
+- 預覽線稿會讀取 AutoCAD 物件／圖層顏色，並依 `monochrome`／`grayscale` 出圖樣式轉成黑色或灰階。
+- 有圖面內容時不再疊加示意標題欄與長邊箭頭，避免遮住實際線稿。
+- 新增預覽比例、色彩與內容接線的 UI contract 檢查。
 
 ## 1.4.3 更新
 
@@ -57,7 +64,7 @@ BatchPlotPlus 是供 AutoCAD 2021–2025（Windows 64 位元）使用的繁體�
 
 一般使用者不需要 Visual Studio 或 .NET SDK：
 
-1. 從 [GitHub Releases](https://github.com/NicheSam/BatchPlotPlus/releases/latest) 下載 `BatchPlotPlus-1.4.3-installer.zip`。
+1. 從 [GitHub Releases](https://github.com/NicheSam/BatchPlotPlus/releases/latest) 下載 `BatchPlotPlus-1.4.4-installer.zip`。
 2. 解壓縮全部內容。
 3. 完整關閉 AutoCAD。
 4. 雙擊 `InstallOrUpdate.bat`。
@@ -109,10 +116,10 @@ ui-preview/             PDF／DWG 頁籤畫面
 
 ## 驗證狀態
 
-1.4.3 已通過：
+1.4.4 已通過：
 
 - `net48` 與 `net8.0-windows` Release 建置：0 warnings、0 errors。
-- 31 項純邏輯測試。
+- 37 項純邏輯測試。
 - 全域 UI 控制項→狀態→後端消費者契約測試。
 - 安裝器在空格、括號、`&`、中文、`!` 五種路徑的非部署沙盒測試。
 - 安裝檔缺失時回傳非零退出碼與明確錯誤訊息。
@@ -134,8 +141,8 @@ ui-preview/             PDF／DWG 頁籤畫面
 
 ## English
 
-BatchPlotPlus 1.4.3 is a Traditional Chinese plug-in for AutoCAD 2021–2025 on 64-bit Windows. It provides a Ribbon tab and a two-tab WinForms interface for native multi-page PDF output and copy-safe DWG splitting. The bundle automatically loads a .NET Framework 4.8 assembly on AutoCAD 2021–2024 and a .NET 8 assembly on AutoCAD 2025.
+BatchPlotPlus 1.4.4 is a Traditional Chinese plug-in for AutoCAD 2021–2025 on 64-bit Windows. It provides a Ribbon tab and a two-tab WinForms interface for native multi-page PDF output and copy-safe DWG splitting. The bundle automatically loads a .NET Framework 4.8 assembly on AutoCAD 2021–2024 and a .NET 8 assembly on AutoCAD 2025.
 
-Version 1.4.3 adds independent lineweight and transparency output switches, explicit page orientation, safer ProgramData deployment, stale Loader cleanup, special-character path handling, and truthful UAC exit-code propagation. The 1.4.3 numbering supersedes the earlier 1.4.21 package label.
+Version 1.4.4 fixes the output preview scale and color model: fit-to-paper preview now uses a printable-area layout, entity and layer colors are sampled, and monochrome/grayscale plot styles are reflected in the preview. Version 1.4.3 remains the earlier installation and plotting workflow hardening release.
 
 Download the installer package from [GitHub Releases](https://github.com/NicheSam/BatchPlotPlus/releases/latest), extract it, close AutoCAD, and run `InstallOrUpdate.bat`. AutoCAD 2021 and 2025 should still receive version-specific runtime smoke testing because those hosts are not installed in the current development environment.

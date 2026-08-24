@@ -5,7 +5,7 @@ namespace BatchPlotPlus.AutoCAD
     internal enum FrameMode { Polyline, Block, Custom }
     internal enum OperationMode { Pdf, SplitDwg }
     internal enum OutputMode { SeparatePdf, MergedPdf }
-    internal enum PendingAction { None, SelectTemplate, SelectRange, SelectSheets, ClearRange, ClearSheets }
+    internal enum PendingAction { None, SelectTemplate, SelectRange, SelectSheets, ClearRange, ClearSheets, PreviewPdf }
     internal enum SortMode { Selection, LeftRightTopBottom, TopBottomLeftRight }
     internal enum PageOrientation { Auto, Landscape, Portrait }
 
@@ -21,6 +21,45 @@ namespace BatchPlotPlus.AutoCAD
         public double MaxY { get; }
     }
 
+
+
+    internal sealed class PlotPreviewSegment
+    {
+        public PlotPreviewSegment(double x1, double y1, double x2, double y2, int colorArgb)
+        {
+            X1 = x1; Y1 = y1; X2 = x2; Y2 = y2; ColorArgb = colorArgb;
+        }
+        public double X1 { get; }
+        public double Y1 { get; }
+        public double X2 { get; }
+        public double Y2 { get; }
+        public int ColorArgb { get; }
+    }
+
+    internal sealed class PlotPreviewItem
+    {
+        public int PageNumber { get; set; }
+        public string FileBase { get; set; } = "";
+        public string Device { get; set; } = "";
+        public string Paper { get; set; } = "";
+        public string PlotStyle { get; set; } = "";
+        public string OrientationLabel { get; set; } = "";
+        public int RotationDegrees { get; set; }
+        public string ScaleLabel { get; set; } = "";
+        public string FrameSizeLabel { get; set; } = "";
+        public string WindowLabel { get; set; } = "";
+        public double WindowMinX { get; set; }
+        public double WindowMinY { get; set; }
+        public double FrameWidth { get; set; }
+        public double FrameHeight { get; set; }
+        public double PageWidth { get; set; }
+        public double PageHeight { get; set; }
+        public bool PrintLineweights { get; set; }
+        public bool PlotTransparency { get; set; }
+        public List<PlotPreviewSegment> ContentSegments { get; } = new List<PlotPreviewSegment>();
+        public int ContentEntityCount { get; set; }
+        public bool ContentPreviewTruncated { get; set; }
+    }
     internal sealed class PluginState
     {
         public string DocumentKey { get; set; } = "";

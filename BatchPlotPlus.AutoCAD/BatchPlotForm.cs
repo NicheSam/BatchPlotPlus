@@ -19,6 +19,7 @@ namespace BatchPlotPlus.AutoCAD
         private readonly Label _matchingStatus;
         private readonly TabControl _tabs;
         private readonly Button _start;
+        private readonly Button _preview;
 
         private readonly RadioButton _separatePdf;
         private readonly RadioButton _mergedPdf;
@@ -54,7 +55,7 @@ namespace BatchPlotPlus.AutoCAD
         public BatchPlotForm(PluginState state)
         {
             _state = state;
-            Text = "批次輸出工具 Plus V1.4.3";
+            Text = "批次輸出工具 Plus V1.4.4";
             Font = new Font("Microsoft JhengHei UI", 9F, FontStyle.Regular, GraphicsUnit.Point);
             StartPosition = FormStartPosition.CenterScreen;
             FormBorderStyle = FormBorderStyle.FixedDialog;
@@ -191,10 +192,11 @@ namespace BatchPlotPlus.AutoCAD
             dwgSort.Controls.AddRange(new Control[] { _dwgSortSelection, _dwgSortHorizontal, _dwgSortVertical, _dwgReverseOrder });
             dwgPage.Controls.AddRange(new Control[] { dwgRules, dwgOutput, dwgNotice, dwgSort });
 
+            _preview = Button("輸出預覽", 306, 560, 112, 28, Preview);
             _start = Button("開始輸出 PDF", 430, 560, 120, 28, Accept);
             var cancel = Button("取消", 562, 560, 88, 28, (_, __) => { DialogResult = DialogResult.Cancel; Close(); });
             var help = Button("使用說明", 662, 560, 90, 28, ShowHelp);
-            Controls.AddRange(new Control[] { common, _tabs, _start, cancel, help });
+            Controls.AddRange(new Control[] { common, _tabs, _preview, _start, cancel, help });
             AcceptButton = _start;
             CancelButton = cancel;
 
@@ -207,6 +209,8 @@ namespace BatchPlotPlus.AutoCAD
         {
             var split = _tabs.SelectedIndex == 1;
             _start.Text = split ? "開始拆分 DWG" : "開始輸出 PDF";
+            _preview.Visible = !split;
+            _preview.Enabled = !split;
             if (split && !_frameBlock.Checked) _frameBlock.Checked = true;
             _framePolyline.Enabled = !split;
             _frameCustom.Enabled = !split;
@@ -270,6 +274,30 @@ namespace BatchPlotPlus.AutoCAD
                 return;
             }
             DialogResult = DialogResult.OK;
+            Close();
+        }
+
+        private void Preview(object? sender, EventArgs e)
+        {
+            CaptureState();
+            _state.OperationMode = OperationMode.Pdf;
+            if (string.IsNullOrWhiteSpace(_state.TemplateHandle))
+            {
+                Warn("\u5c1a\u672a\u9078\u53d6\u5716\u6846\u6a23\u677f\u3002\u8acb\u5148\u6309\u300c\u9078\u53d6\u5716\u6846\u6a23\u677f...\u300d\u3002");
+                return;
+            }
+            if (!_state.AutoLayer && string.IsNullOrWhiteSpace(_state.LayerName))
+            {
+                Warn("\u641c\u5c0b\u5716\u5c64\u4e0d\u53ef\u7559\u767d\uff1b\u5982\u9700\u641c\u5c0b\u6240\u6709\u5716\u5c64\uff0c\u8acb\u8f38\u5165 *\u3002");
+                return;
+            }
+            if (_state.PdfSortMode == SortMode.Selection && _state.ExplicitSheetHandles.Count == 0)
+            {
+                Warn("\u82e5\u8981\u4f9d\u624b\u52d5\u9078\u53d6\u9806\u5e8f\u6392\u5217\uff0c\u8acb\u5148\u6309\u300c\u6307\u5b9a\u8981\u8655\u7406\u7684\u5716\u6846...\u300d\u3002");
+                return;
+            }
+            _state.PendingAction = PendingAction.PreviewPdf;
+            DialogResult = DialogResult.Retry;
             Close();
         }
 

@@ -6,7 +6,7 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
-$version = "1.4.3"
+$version = "1.4.4"
 if ([string]::IsNullOrWhiteSpace($LogPath)) {
     $LogPath = Join-Path $env:TEMP "BatchPlotPlus-install.log"
 }
@@ -67,8 +67,14 @@ function Assert-Manifest([string]$bundle) {
     $entries = @($manifest.ApplicationPackage.Components.ComponentEntry)
     if ($entries.Count -ne 2) { throw "Manifest must contain two version-routed components." }
     foreach ($entry in $entries) {
-        if ([string]$entry.LoadReasons -ne "LoadOnAutoCADStartup") {
-            throw "$($entry.AppName) does not use the supported startup LoadReasons value."
+        if ([string]$entry.LoadOnAutoCADStartup -ne "True") {
+            throw "$($entry.AppName) does not explicitly enable LoadOnAutoCADStartup."
+        }
+        if ([string]$entry.LoadOnCommandInvocation -ne "True") {
+            throw "$($entry.AppName) does not explicitly enable LoadOnCommandInvocation."
+        }
+        if ($null -ne $entry.LoadReasons) {
+            throw "$($entry.AppName) still uses ambiguous LoadReasons."
         }
         $commands = @($entry.Commands.Command | ForEach-Object { [string]$_.Global })
         foreach ($command in @("BATCHPLOTPLUS", "BATCHPDF", "BATCHWB", "BATCHPLOTDIAG")) {
@@ -115,6 +121,47 @@ function Backup-AndRemoveLegacyLoaders([string]$appData, [string]$target) {
     }
 }
 
+
+function Ensure-LoaderRegistrations([string]$target) {
+    $root = "HKCU:\Software\Autodesk\AutoCAD"
+    if (-not (Test-Path $root)) { return }
+    $productRoots = @(Get-ChildItem $root -ErrorAction SilentlyContinue | ForEach-Object {
+        $seriesKey = $_
+        Get-ChildItem $seriesKey.PSPath -ErrorAction SilentlyContinue | Where-Object {
+            $seriesKey.PSChildName -like "R24.*" -or $seriesKey.PSChildName -like "R25.*"
+        } | ForEach-Object {
+            [pscustomobject]@{ Series = $seriesKey.PSChildName; Path = $_.PSPath }
+        }
+    })
+    foreach ($product in $productRoots) {
+        if ($product.Series -like "R24.*") {
+            $appName = "BatchPlotPlus.R24"
+            $loader = Join-Path $target "Contents\R24\BatchPlotPlus.AutoCAD.dll"
+        } elseif ($product.Series -like "R25.*") {
+            $appName = "BatchPlotPlus.R25"
+            $loader = Join-Path $target "Contents\R25\BatchPlotPlus.AutoCAD.dll"
+        } else {
+            continue
+        }
+        if (-not (Test-Path -LiteralPath $loader -PathType Leaf)) { continue }
+        $appsPath = Join-Path $product.Path "Applications"
+        $appPath = Join-Path $appsPath $appName
+        New-Item -Path $appPath -Force | Out-Null
+        New-ItemProperty -Path $appPath -Name "LOADER" -PropertyType String -Value $loader -Force | Out-Null
+        New-ItemProperty -Path $appPath -Name "LOADCTRLS" -PropertyType DWord -Value 14 -Force | Out-Null
+        New-ItemProperty -Path $appPath -Name "DESCRIPTION" -PropertyType String -Value $appName -Force | Out-Null
+        New-ItemProperty -Path $appPath -Name "MANAGED" -PropertyType DWord -Value 1 -Force | Out-Null
+        $commandsPath = Join-Path $appPath "Commands"
+        New-Item -Path $commandsPath -Force | Out-Null
+        foreach ($command in @("BATCHPLOTPLUS", "BATCHPDF", "BATCHWB", "BATCHPLOTDIAG")) {
+            New-ItemProperty -Path $commandsPath -Name $command -PropertyType String -Value $command -Force | Out-Null
+        }
+        $groupsPath = Join-Path $appPath "Groups"
+        New-Item -Path $groupsPath -Force | Out-Null
+        New-ItemProperty -Path $groupsPath -Name "BatchPlotPlus.Commands" -PropertyType String -Value "BatchPlotPlus.Commands" -Force | Out-Null
+        Write-InstallLog "Ensured startup Loader registration: $appPath"
+    }
+}
 function Assert-SourceBundle([string]$source) {
     foreach ($required in @(
         (Join-Path $source "PackageContents.xml"),
@@ -168,6 +215,7 @@ if (-not (Test-IsAdministrator)) {
     try {
         $target = Join-Path $env:ProgramData "Autodesk\ApplicationPlugins\BatchPlotPlus.bundle"
         Backup-AndRemoveLegacyLoaders $OriginalAppData $target
+        Ensure-LoaderRegistrations $target
         Write-InstallLog "Deployment verified; AutoCAD runtime verification is pending."
         exit 0
     } catch {
@@ -220,6 +268,7 @@ try {
     Write-InstallLog "Bundle deployed and statically verified: $target"
     if ($Elevated) { exit 0 }
     Backup-AndRemoveLegacyLoaders $OriginalAppData $target
+    Ensure-LoaderRegistrations $target
     Write-InstallLog "Deployment verified; AutoCAD runtime verification is pending."
     exit 0
 } catch {

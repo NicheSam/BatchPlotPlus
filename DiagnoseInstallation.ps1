@@ -46,7 +46,7 @@ foreach ($bundle in $found) {
         [xml]$manifest = Get-Content -LiteralPath $manifestPath -Raw -Encoding UTF8
         $version = $manifest.ApplicationPackage.AppVersion
         Add-Line "Version: $version"
-        if ($version -eq "1.4.3") { Add-Pass "Manifest version is 1.4.3." } else { Add-Warn "Manifest is not version 1.4.3." }
+        if ($version -eq "1.4.4") { Add-Pass "Manifest version is 1.4.4." } else { Add-Warn "Manifest is not version 1.4.4." }
         $bundleFiles = @(Get-ChildItem -LiteralPath $bundle -Recurse -File -ErrorAction Stop)
         $blockedFiles = New-Object System.Collections.Generic.List[System.IO.FileInfo]
         foreach ($bundleFile in $bundleFiles) {
@@ -75,7 +75,9 @@ foreach ($bundle in $found) {
             } else {
                 Add-Fail "$($entry.AppName) DLL is missing: $modulePath"
             }
-            if ([string]$entry.LoadReasons -ne "LoadOnAutoCADStartup") { Add-Fail "$($entry.AppName) does not use the supported startup LoadReasons value." }
+            if ([string]$entry.LoadOnAutoCADStartup -ne "True") { Add-Fail "$($entry.AppName) does not explicitly enable LoadOnAutoCADStartup." }
+            if ([string]$entry.LoadOnCommandInvocation -ne "True") { Add-Fail "$($entry.AppName) does not explicitly enable LoadOnCommandInvocation." }
+            if ($null -ne $entry.LoadReasons) { Add-Fail "$($entry.AppName) still uses ambiguous LoadReasons." }
             $commands = @($entry.Commands.Command | ForEach-Object { [string]$_.Global })
             foreach ($required in @("BATCHPLOTPLUS", "BATCHPDF", "BATCHWB", "BATCHPLOTDIAG")) {
                 if ($commands -notcontains $required) { Add-Fail "$($entry.AppName) does not declare $required." }
@@ -138,13 +140,22 @@ if ($loaderKeys.Count -eq 0) {
     Add-Warn "No BatchPlotPlus Loader registration exists yet. Restart AutoCAD once, then run this diagnostic again."
 } else {
     foreach ($loaderKey in $loaderKeys) {
-        $loader = [string](Get-ItemProperty -LiteralPath $loaderKey.PSPath -ErrorAction SilentlyContinue).LOADER
+        $loaderProperties = Get-ItemProperty -LiteralPath $loaderKey.PSPath -ErrorAction SilentlyContinue
+        $loader = [string]$loaderProperties.LOADER
+        $loadCtrls = $loaderProperties.LOADCTRLS
         if ([string]::IsNullOrWhiteSpace($loader)) {
             Add-Fail "Loader registration has no LOADER value: $($loaderKey.Name)"
         } elseif ($loader.StartsWith($trustedBundle, [StringComparison]::OrdinalIgnoreCase) -and (Test-Path -LiteralPath $loader)) {
-            Add-Pass "Loader points to the trusted v1.4.3 bundle: $loader"
+            Add-Pass "Loader points to the trusted v1.4.4 bundle: $loader"
         } else {
             Add-Fail "Loader points to a missing or legacy DLL: $loader"
+        }
+        if ($null -eq $loadCtrls) {
+            Add-Fail "Loader registration has no LOADCTRLS value: $($loaderKey.Name)"
+        } elseif ((([int]$loadCtrls -band 2) -eq 0) -or (([int]$loadCtrls -band 4) -eq 0)) {
+            Add-Fail "Loader LOADCTRLS does not enable startup and command demand-load: $($loaderKey.Name)=$loadCtrls"
+        } else {
+            Add-Pass "Loader LOADCTRLS enables startup and command demand-load: $($loaderKey.Name)=$loadCtrls"
         }
     }
 }

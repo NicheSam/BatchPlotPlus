@@ -21,6 +21,21 @@ namespace BatchPlotPlus.AutoCAD
         public bool PrintLineweights { get; set; }
         public bool PlotTransparency { get; set; }
     }
+    internal sealed class PlotWindowBounds
+    {
+        public PlotWindowBounds(double minX, double minY, double maxX, double maxY)
+        {
+            MinX = minX;
+            MinY = minY;
+            MaxX = maxX;
+            MaxY = maxY;
+        }
+
+        public double MinX { get; }
+        public double MinY { get; }
+        public double MaxX { get; }
+        public double MaxY { get; }
+    }
 
     internal static class BatchLogic
     {
@@ -102,6 +117,37 @@ namespace BatchPlotPlus.AutoCAD
             };
         }
 
+        public static bool TryGetPaperMillimeters(string paper, out double width, out double height)
+        {
+            switch ((paper ?? "").Trim().ToUpperInvariant())
+            {
+                case "A0": width = 841; height = 1189; return true;
+                case "A1": width = 594; height = 841; return true;
+                case "A2": width = 420; height = 594; return true;
+                case "A3": width = 297; height = 420; return true;
+                case "A4": width = 210; height = 297; return true;
+                default: width = 297; height = 420; return false;
+            }
+        }
+        public static PlotWindowBounds NormalizePlotWindow(double x1, double y1, double x2, double y2)
+        {
+            if (!IsFinite(x1) || !IsFinite(y1) || !IsFinite(x2) || !IsFinite(y2))
+                throw new InvalidOperationException("\u51fa\u5716\u7bc4\u570d\u5305\u542b\u7121\u6548\u5ea7\u6a19\uff0c\u8acb\u91cd\u65b0\u6307\u5b9a\u5716\u6846\u6216\u51fa\u5716\u7bc4\u570d\u3002");
+
+            var minX = Math.Min(x1, x2);
+            var minY = Math.Min(y1, y2);
+            var maxX = Math.Max(x1, x2);
+            var maxY = Math.Max(y1, y2);
+            if (Math.Abs(maxX - minX) < 1e-8 || Math.Abs(maxY - minY) < 1e-8)
+                throw new InvalidOperationException("\u51fa\u5716\u7bc4\u570d\u5bec\u5ea6\u6216\u9ad8\u5ea6\u70ba 0\uff0c\u8acb\u91cd\u65b0\u6307\u5b9a\u6709\u6548\u5716\u6846\u3002");
+
+            return new PlotWindowBounds(minX, minY, maxX, maxY);
+        }
+
+        private static bool IsFinite(double value)
+        {
+            return !double.IsNaN(value) && !double.IsInfinity(value);
+        }
         private static List<SheetOrderItem> GroupAndSort(IList<SheetOrderItem> items, bool rowsFirst)
         {
             var sizes = items.Select(item => rowsFirst ? item.MaxY - item.MinY : item.MaxX - item.MinX).OrderBy(value => value).ToList();
