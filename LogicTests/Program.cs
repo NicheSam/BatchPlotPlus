@@ -9,6 +9,17 @@ internal static class Program
 
     private static void Main()
     {
+        try { Run(); }
+        catch (Exception error)
+        {
+            Console.Error.WriteLine(error.GetType().FullName + ": " + error.Message);
+            Console.Error.WriteLine(error.StackTrace);
+            Environment.ExitCode = 1;
+        }
+    }
+
+    private static void Run()
+    {
         Check(BatchLogic.WildcardMatch("A-FRAME", "A-*"), "wildcard star");
         Check(BatchLogic.WildcardMatch("FRAME-01", "FRAME-??"), "wildcard question mark");
         Check(!BatchLogic.WildcardMatch("OTHER", "FRAME-*"), "wildcard rejection");
@@ -84,6 +95,10 @@ internal static class Program
         ExpectInvalid(() => BatchLogic.NormalizePlotWindow(1, 1, 1, 2), "reject zero-width plot window");
         ExpectInvalid(() => BatchLogic.NormalizePlotWindow(double.NaN, 1, 2, 3), "reject non-finite plot window");
 
+        Check(BatchLogic.SafeFileName("CON.pdf") == "_CON.pdf", "reserved filename with extension");
+        Check(BatchLogic.SafeFileName("lpt9") == "_lpt9", "reserved filename case insensitive");
+        Check(BatchLogic.ProgressPercent(int.MaxValue - 1, int.MaxValue) == 99, "progress overflow");
+        UpgradeChecks.Run();
         Console.WriteLine("Logic tests passed: " + _checks);
     }
 

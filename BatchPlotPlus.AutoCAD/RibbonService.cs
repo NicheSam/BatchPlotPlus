@@ -132,6 +132,8 @@ namespace BatchPlotPlus.AutoCAD
             panelSource.Items.Add(CreateButton("\u8f38\u51fa PDF", "BATCHPDF ", "\u958b\u555f\u6279\u6b21 PDF \u8f38\u51fa\u9801\u7c64"));
             panelSource.Items.Add(CreateButton("\u62c6\u5206 DWG", "BATCHWB ", "\u958b\u555f\u62c6\u5206 DWG \u9801\u7c64"));
 
+            panelSource.Items.Add(CreateButton("\u5b57\u578b\u7ba1\u7406", "BATCHFONTS ", "\u67e5\u770b\u5b57\u578b\u66ff\u4ee3\u72c0\u614b\u3001\u7d00\u9304\u8207\u5feb\u53d6"));
+
             var tab = new RibbonTab
             {
                 Id = TabId,

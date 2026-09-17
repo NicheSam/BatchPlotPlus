@@ -6,7 +6,7 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
-$version = "1.4.4"
+$version = "1.5.0"
 if ([string]::IsNullOrWhiteSpace($LogPath)) {
     $LogPath = Join-Path $env:TEMP "BatchPlotPlus-install.log"
 }
@@ -77,7 +77,7 @@ function Assert-Manifest([string]$bundle) {
             throw "$($entry.AppName) still uses ambiguous LoadReasons."
         }
         $commands = @($entry.Commands.Command | ForEach-Object { [string]$_.Global })
-        foreach ($command in @("BATCHPLOTPLUS", "BATCHPDF", "BATCHWB", "BATCHPLOTDIAG")) {
+        foreach ($command in @("BATCHPLOTPLUS", "BATCHPDF", "BATCHWB", "BATCHPLOTDIAG", "BATCHFONTS")) {
             if ($commands -notcontains $command) { throw "$($entry.AppName) does not declare $command." }
         }
     }
@@ -128,7 +128,7 @@ function Ensure-LoaderRegistrations([string]$target) {
     $productRoots = @(Get-ChildItem $root -ErrorAction SilentlyContinue | ForEach-Object {
         $seriesKey = $_
         Get-ChildItem $seriesKey.PSPath -ErrorAction SilentlyContinue | Where-Object {
-            $seriesKey.PSChildName -like "R24.*" -or $seriesKey.PSChildName -like "R25.*"
+            $seriesKey.PSChildName -in @("R24.0", "R24.1", "R24.2", "R24.3", "R25.0")
         } | ForEach-Object {
             [pscustomobject]@{ Series = $seriesKey.PSChildName; Path = $_.PSPath }
         }
@@ -137,7 +137,7 @@ function Ensure-LoaderRegistrations([string]$target) {
         if ($product.Series -like "R24.*") {
             $appName = "BatchPlotPlus.R24"
             $loader = Join-Path $target "Contents\R24\BatchPlotPlus.AutoCAD.dll"
-        } elseif ($product.Series -like "R25.*") {
+        } elseif ($product.Series -eq "R25.0") {
             $appName = "BatchPlotPlus.R25"
             $loader = Join-Path $target "Contents\R25\BatchPlotPlus.AutoCAD.dll"
         } else {
@@ -153,7 +153,7 @@ function Ensure-LoaderRegistrations([string]$target) {
         New-ItemProperty -Path $appPath -Name "MANAGED" -PropertyType DWord -Value 1 -Force | Out-Null
         $commandsPath = Join-Path $appPath "Commands"
         New-Item -Path $commandsPath -Force | Out-Null
-        foreach ($command in @("BATCHPLOTPLUS", "BATCHPDF", "BATCHWB", "BATCHPLOTDIAG")) {
+        foreach ($command in @("BATCHPLOTPLUS", "BATCHPDF", "BATCHWB", "BATCHPLOTDIAG", "BATCHFONTS")) {
             New-ItemProperty -Path $commandsPath -Name $command -PropertyType String -Value $command -Force | Out-Null
         }
         $groupsPath = Join-Path $appPath "Groups"
@@ -192,6 +192,13 @@ if ($ValidateOnly) {
     }
 }
 
+if (-not $Elevated) {
+    if (-not [string]::Equals($OriginalAppData, $env:APPDATA, [StringComparison]::OrdinalIgnoreCase)) {
+        throw "Run the installer as the AutoCAD user; do not substitute another account."
+    }
+    & (Join-Path $PSScriptRoot "MigrateCadFontAuto.ps1") -ValidateOnly
+}
+
 if (-not (Test-IsAdministrator)) {
     Write-InstallLog "Requesting administrator permission for ProgramData deployment."
     $argumentLine = @(
@@ -203,7 +210,7 @@ if (-not (Test-IsAdministrator)) {
         "-LogPath " + (Quote-ProcessArgument $LogPath)
     ) -join " "
     try {
-        $elevatedProcess = Start-Process -FilePath "powershell.exe" -ArgumentList $argumentLine -Verb RunAs -Wait -PassThru
+        $elevatedProcess = Start-Process -FilePath "powershell.exe" -ArgumentList $argumentLine -Verb RunAs -WindowStyle Hidden -Wait -PassThru
     } catch {
         Write-InstallLog ("Elevation was cancelled or failed: " + $_.Exception.Message)
         exit 1
@@ -216,6 +223,7 @@ if (-not (Test-IsAdministrator)) {
         $target = Join-Path $env:ProgramData "Autodesk\ApplicationPlugins\BatchPlotPlus.bundle"
         Backup-AndRemoveLegacyLoaders $OriginalAppData $target
         Ensure-LoaderRegistrations $target
+        & (Join-Path $PSScriptRoot "MigrateCadFontAuto.ps1")
         Write-InstallLog "Deployment verified; AutoCAD runtime verification is pending."
         exit 0
     } catch {
@@ -264,11 +272,11 @@ try {
             Write-InstallLog "Removed legacy bundle: $legacy"
         }
     }
-    if (Test-Path -LiteralPath $backup) { Remove-Item -LiteralPath $backup -Recurse -Force }
     Write-InstallLog "Bundle deployed and statically verified: $target"
     if ($Elevated) { exit 0 }
     Backup-AndRemoveLegacyLoaders $OriginalAppData $target
     Ensure-LoaderRegistrations $target
+    if (-not $Elevated) { & (Join-Path $PSScriptRoot "MigrateCadFontAuto.ps1") }
     Write-InstallLog "Deployment verified; AutoCAD runtime verification is pending."
     exit 0
 } catch {

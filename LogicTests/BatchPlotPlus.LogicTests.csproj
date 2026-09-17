@@ -1,12 +1,17 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net48</TargetFramework>
+    <TargetFrameworks>net48;net8.0-windows</TargetFrameworks>
+    <Nullable>enable</Nullable>
+    <PlatformTarget>x64</PlatformTarget>
+    <BaseOutputPath>bin\x64\</BaseOutputPath>
     <LangVersion>latest</LangVersion>
     <AssemblyName>BatchPlotPlus.LogicTests</AssemblyName>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="..\BatchPlotPlus.AutoCAD\BatchLogic.cs" Link="BatchLogic.cs" />
+    <Compile Include="..\BatchPlotPlus.AutoCAD\FontCache.cs" Link="FontCache.cs" />
+    <Compile Include="..\BatchPlotPlus.AutoCAD\TemporarySetting.cs" Link="TemporarySetting.cs" />
     <Compile Include="..\BatchPlotPlus.AutoCAD\Models.cs" Link="Models.cs" />
   </ItemGroup>
 </Project>

@@ -22,7 +22,7 @@ def main() -> int:
         require("LoadReasons" not in entry.attrib, "ambiguous LoadReasons attribute is still present")
         commands = {item.attrib.get("Global") for item in entry.findall("./Commands/Command")}
         require(
-            {"BATCHPLOTPLUS", "BATCHPDF", "BATCHWB", "BATCHPLOTDIAG"}.issubset(commands),
+            {"BATCHPLOTPLUS", "BATCHPDF", "BATCHWB", "BATCHPLOTDIAG", "BATCHFONTS"}.issubset(commands),
             "manifest command declarations are incomplete",
         )
 

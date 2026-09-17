@@ -16,10 +16,14 @@ namespace BatchPlotPlus.AutoCAD
         public void Initialize()
         {
             InitializeRibbonSafely();
+            try { FontService.Initialize(); }
+            catch (System.Exception exception) { PluginDiagnostics.Write("Font module initialization failed; output commands remain available.", exception); }
         }
 
         public void Terminate()
         {
+            try { FontService.Terminate(); }
+            catch (System.Exception exception) { PluginDiagnostics.Write("Font module termination failed.", exception); }
             try
             {
                 RibbonService.Terminate();
@@ -28,6 +32,13 @@ namespace BatchPlotPlus.AutoCAD
             {
                 PluginDiagnostics.Write("Ribbon termination failed.", exception);
             }
+        }
+
+        [CommandMethod("BATCHFONTS", CommandFlags.Modal)]
+        public void FontTools()
+        {
+            try { using (var form = new FontToolsForm()) AcApp.ShowModalDialog(form); }
+            catch (System.Exception exception) { PluginDiagnostics.Write("Font tools failed.", exception); }
         }
 
         private static void InitializeRibbonSafely()

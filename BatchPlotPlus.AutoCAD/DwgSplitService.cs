@@ -95,6 +95,8 @@ namespace BatchPlotPlus.AutoCAD
                 new Point3d(min.X - padding, min.Y - padding, 0), new Point3d(max.X + padding, min.Y - padding, 0),
                 new Point3d(max.X + padding, max.Y + padding, 0), new Point3d(min.X - padding, max.Y + padding, 0)
             };
+            var worldToUcs = editor.CurrentUserCoordinateSystem.Inverse();
+            for (var i = 0; i < polygon.Count; i++) polygon[i] = polygon[i].TransformBy(worldToUcs);
             var selection = editor.SelectCrossingPolygon(polygon);
             if (selection.Status != PromptStatus.OK || selection.Value == null) return result;
             using (var transaction = database.TransactionManager.StartOpenCloseTransaction())
@@ -120,6 +122,10 @@ namespace BatchPlotPlus.AutoCAD
                 var aspect = Math.Max(1e-6, view.Width / Math.Max(1e-6, view.Height));
                 if (width / height > aspect) height = width / aspect;
                 else width = height * aspect;
+                view.ViewDirection = Vector3d.ZAxis;
+                view.Target = Point3d.Origin;
+                view.ViewTwist = 0;
+                view.PerspectiveEnabled = false;
                 view.CenterPoint = new Point2d((extents.MinPoint.X + extents.MaxPoint.X) / 2.0, (extents.MinPoint.Y + extents.MaxPoint.Y) / 2.0);
                 view.Width = width;
                 view.Height = height;

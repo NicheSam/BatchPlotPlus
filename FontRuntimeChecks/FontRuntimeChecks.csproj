@@ -1,0 +1,8 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><TargetFramework>net48</TargetFramework><PlatformTarget>x64</PlatformTarget><LangVersion>latest</LangVersion><Nullable>enable</Nullable><CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies></PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="AutoCAD.NET" Version="24.0.0" PrivateAssets="all" />
+    <Compile Include="..\BatchPlotPlus.AutoCAD\FontCache.cs" Link="FontCache.cs" />
+    <Compile Include="..\BatchPlotPlus.AutoCAD\FontScanCache.cs" Link="FontScanCache.cs" />
+  </ItemGroup>
+</Project>

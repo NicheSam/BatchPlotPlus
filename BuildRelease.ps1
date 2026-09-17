@@ -6,8 +6,8 @@ $logicProject = Join-Path $projectRoot "LogicTests\BatchPlotPlus.LogicTests.cspr
 $bundle = Join-Path $projectRoot "Bundle\BatchPlotPlus.bundle"
 $releaseRoot = Join-Path $projectRoot "release"
 $releaseBundle = Join-Path $releaseRoot "BatchPlotPlus.bundle"
-$releaseZip = Join-Path $releaseRoot "BatchPlotPlus-1.4.4.zip"
-$installerZip = Join-Path $releaseRoot "BatchPlotPlus-1.4.4-installer.zip"
+$releaseZip = Join-Path $releaseRoot "BatchPlotPlus-1.5.0.zip"
+$installerZip = Join-Path $releaseRoot "BatchPlotPlus-1.5.0-installer.zip"
 $installerStage = Join-Path $releaseRoot "_installer"
 $r24Output = Join-Path $projectRoot "BatchPlotPlus.AutoCAD\bin\Release\net48\BatchPlotPlus.AutoCAD.dll"
 $r25Output = Join-Path $projectRoot "BatchPlotPlus.AutoCAD\bin\Release\net8.0-windows\BatchPlotPlus.AutoCAD.dll"
@@ -21,8 +21,10 @@ dotnet build $pluginProject -c Release --no-restore
 if ($LASTEXITCODE -ne 0) { throw "Plugin build failed." }
 dotnet build $logicProject -c Release
 if ($LASTEXITCODE -ne 0) { throw "Logic test build failed." }
-& (Join-Path $projectRoot "LogicTests\bin\Release\net48\BatchPlotPlus.LogicTests.exe")
+& (Join-Path $projectRoot "LogicTests\bin\x64\Release\net48\BatchPlotPlus.LogicTests.exe")
 if ($LASTEXITCODE -ne 0) { throw "Logic tests failed." }
+dotnet (Join-Path $projectRoot "LogicTests\bin\x64\Release\net8.0-windows\BatchPlotPlus.LogicTests.dll")
+if ($LASTEXITCODE -ne 0) { throw "NET8 logic tests failed." }
 
 New-Item -ItemType Directory -Path (Split-Path -Parent $r24Bundle) -Force | Out-Null
 New-Item -ItemType Directory -Path (Split-Path -Parent $r25Bundle) -Force | Out-Null
@@ -36,6 +38,8 @@ python (Join-Path $projectRoot "tools\test_installation_contract.py")
 if ($LASTEXITCODE -ne 0) { throw "Installation contract failed." }
 python (Join-Path $projectRoot "tools\test_ui_contract.py")
 if ($LASTEXITCODE -ne 0) { throw "UI and workflow contract failed." }
+python (Join-Path $projectRoot "tools\test_upgrade_contract.py")
+if ($LASTEXITCODE -ne 0) { throw "Upgrade integration contract failed." }
 
 New-Item -ItemType Directory -Path $releaseRoot -Force | Out-Null
 if (Test-Path -LiteralPath $releaseBundle) { Remove-Item -LiteralPath $releaseBundle -Recurse -Force }
@@ -46,6 +50,8 @@ if (Test-Path -LiteralPath $installerStage) { Remove-Item -LiteralPath $installe
 New-Item -ItemType Directory -Path (Join-Path $installerStage "release") -Force | Out-Null
 Copy-Item -LiteralPath (Join-Path $projectRoot "InstallOrUpdate.bat") -Destination $installerStage -Force
 Copy-Item -LiteralPath (Join-Path $projectRoot "InstallOrUpdate.ps1") -Destination $installerStage -Force
+Copy-Item -LiteralPath (Join-Path $projectRoot "MigrateCadFontAuto.ps1") -Destination $installerStage -Force
+Copy-Item -LiteralPath (Join-Path $projectRoot "docs\upgrade-1.5.md") -Destination (Join-Path $installerStage "RELEASE-NOTES.md") -Force
 Copy-Item -LiteralPath (Join-Path $projectRoot "DiagnoseInstallation.bat") -Destination $installerStage -Force
 Copy-Item -LiteralPath (Join-Path $projectRoot "DiagnoseInstallation.ps1") -Destination $installerStage -Force
 Copy-Item -LiteralPath (Join-Path $projectRoot "VerifyUnblocked.ps1") -Destination $installerStage -Force
@@ -57,6 +63,6 @@ Remove-Item -LiteralPath $installerStage -Recurse -Force
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File (Join-Path $projectRoot "tools\test_installer_paths.ps1") -InstallerZip $installerZip
 if ($LASTEXITCODE -ne 0) { throw "Installer path tests failed." }
 
-Write-Output "BatchPlotPlus 1.4.4 release created."
+Write-Output "BatchPlotPlus 1.5.0 release created."
 Write-Output $releaseZip
 Write-Output $installerZip

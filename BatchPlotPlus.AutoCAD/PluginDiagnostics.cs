@@ -46,6 +46,7 @@ namespace BatchPlotPlus.AutoCAD
             builder.AppendLine("SECURELOAD: " + SafeSystemVariable("SECURELOAD"));
             builder.AppendLine("TRUSTEDPATHS: " + SafeSystemVariable("TRUSTEDPATHS"));
             builder.AppendLine("Ribbon tab: " + RibbonService.Status);
+            builder.AppendLine("Fonts: " + FontService.Status);
             builder.AppendLine("Log: " + LogPath);
             return builder.ToString().TrimEnd();
         }
