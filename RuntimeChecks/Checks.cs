@@ -10,10 +10,11 @@ using BatchPlotPlus.AutoCAD;
 [assembly: CommandClass(typeof(RuntimeChecks))]
 public sealed class RuntimeChecks
 {
+    private static string TestRoot => Environment.GetEnvironmentVariable("BPP_TEST_ROOT") ?? File.ReadAllText(Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)!, "test-root.txt")).Trim();
     [CommandMethod("BPPUPGRADETEST")]
     public void Run()
     {
-        var path = Path.Combine(Environment.GetEnvironmentVariable("BPP_TEST_ROOT")!, "bootstrap.txt");
+        var path = Path.Combine(TestRoot, "bootstrap.txt");
         Directory.CreateDirectory(Path.GetDirectoryName(path)!);
         File.WriteAllText(path, "BOOTSTRAP\r\n");
         foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
@@ -26,7 +27,7 @@ public sealed class RuntimeChecks
     [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
     private void RunChecks()
     {
-        var root = Environment.GetEnvironmentVariable("BPP_TEST_ROOT");
+        var root = TestRoot;
         if (string.IsNullOrEmpty(root)) throw new InvalidOperationException("BPP_TEST_ROOT is required.");
         Directory.CreateDirectory(root);
         var log = Path.Combine(root, "runtime.txt");
@@ -34,6 +35,26 @@ public sealed class RuntimeChecks
         try
         {
             var doc = AcApp.DocumentManager.MdiActiveDocument;
+            File.AppendAllText(log, PluginDiagnostics.BuildLoadedReport() + "\r\n");
+            using (var form = new FontToolsForm())
+            {
+                using (var timer = new System.Windows.Forms.Timer { Interval = 800 })
+                {
+                    timer.Tick += (sender, args) =>
+                    {
+                        timer.Stop();
+                        try
+                        {
+                            using (var bitmap = new System.Drawing.Bitmap(form.Width, form.Height))
+                            { form.DrawToBitmap(bitmap, new System.Drawing.Rectangle(System.Drawing.Point.Empty, form.Size)); bitmap.Save(Path.Combine(root, "font-gui.png")); }
+                        }
+                        finally { form.Close(); }
+                    };
+                    form.Shown += (sender, args) => timer.Start();
+                    Autodesk.AutoCAD.ApplicationServices.Application.ShowModalDialog(form);
+                }
+            }
+            File.AppendAllText(log, "DESKTOP_FONT_GUI_OPEN_CLOSE_PASS\r\n");
             var db = doc.Database;
             var state = new PluginState { FrameMode = FrameMode.Polyline, LayerName = "0", AutoLayer = true, OutputDirectory = root, MergedFileName = "runtime", DwgOutputDirectory = root };
             using (var tx = db.TransactionManager.StartTransaction())
@@ -79,6 +100,10 @@ public sealed class RuntimeChecks
             var fontRoot = Path.Combine(root, "font-state"); Directory.CreateDirectory(fontRoot);
             var cache = new FontCache(Path.Combine(fontRoot, "Cache"));
             var type = typeof(FontService);
+            var priorRoot = type.GetField("_root", BindingFlags.Static | BindingFlags.NonPublic)!.GetValue(null);
+            var priorCache = type.GetField("_cache", BindingFlags.Static | BindingFlags.NonPublic)!.GetValue(null);
+            try
+            {
             type.GetField("_root", BindingFlags.Static | BindingFlags.NonPublic)!.SetValue(null, fontRoot);
             type.GetField("_cache", BindingFlags.Static | BindingFlags.NonPublic)!.SetValue(null, cache);
             var originalHash = FontCache.Hash(input);
@@ -88,6 +113,12 @@ public sealed class RuntimeChecks
             prepare.Invoke(null, new object[] { input });
             if (FontCache.Hash(input) != originalHash) throw new InvalidOperationException("Source DWG changed.");
             File.AppendAllText(log, "FONT_SCAN_AND_REPEAT_PASSED_SOURCE_UNCHANGED\r\nPASS\r\n");
+            }
+            finally
+            {
+                type.GetField("_root", BindingFlags.Static | BindingFlags.NonPublic)!.SetValue(null, priorRoot);
+                type.GetField("_cache", BindingFlags.Static | BindingFlags.NonPublic)!.SetValue(null, priorCache);
+            }
         }
         catch (System.Exception error) { File.AppendAllText(log, "FAIL " + error + "\r\n"); }
     }
