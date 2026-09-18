@@ -1,10 +1,12 @@
 # BatchPlotPlus 1.5.3
 
-**1.5.3：框到的物件直接輸出。** 依使用者最新要求，移除 1.5.2 的跨圖紙阻擋及其他圖框排除。DWG 矩形／封閉聚合線模式仍使用 WB 交叉選取；每個邊界各一檔，框到的完整物件都保留，不裁切跨框線段或圖塊。PDF 與共用輸出邏輯維持 1.4.4 基準。尚未發布 Release。
+**1.5.3：框到的物件直接輸出。** 移除 1.5.2 的跨圖紙阻擋及其他圖框排除。DWG 矩形／封閉聚合線模式仍使用 WB 交叉選取；每個邊界各一檔，框到的完整物件都保留，不裁切跨框線段或圖塊。PDF 與共用輸出邏輯維持 1.4.4 基準。
+
+**[下載 1.5.3 安裝包](https://github.com/NicheSam/BatchPlotPlus/releases/download/v1.5.3/BatchPlotPlus-1.5.3-installer.zip)** · [正式 Release](https://github.com/NicheSam/BatchPlotPlus/releases/tag/v1.5.3) · [SHA256](https://github.com/NicheSam/BatchPlotPlus/releases/download/v1.5.3/BatchPlotPlus-1.5.3-SHA256.txt)
 
 使用方式及驗證界線見 [1.5.3 拆圖說明](docs/dwg-split-1.5.3.md)。[1.5.2 紀錄](docs/dwg-split-1.5.2.md) 的跨圖紙阻擋已取消，不適用目前版本。
 
-1.5.3 已完成 AutoCAD 2023 拆圖與輸出檔回讀測試，使用者亦確認可用。PDF 核心／共用邏輯比對及自動檢查通過，本版未新增 PDF 實際列印驗收。取得本版請使用目前原始碼與 `BuildRelease.ps1` 建置；下方 1.5.0 安裝包是舊版。
+1.5.3 已完成 AutoCAD 2023 拆圖與輸出檔回讀測試，使用者亦確認可用。PDF 核心／共用邏輯比對及自動檢查通過，本版未新增 PDF 實際列印驗收。下載安裝包後解壓縮，關閉 AutoCAD，再執行 `InstallOrUpdate.bat`；亦可使用 `BuildRelease.ps1` 自行建置。下方 1.5.0 安裝包是舊版。
 
 <details>
 <summary>1.5.0–1.5.1 歷史下載與驗證紀錄</summary>
