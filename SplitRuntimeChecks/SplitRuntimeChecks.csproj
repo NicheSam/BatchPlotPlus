@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net48</TargetFramework>
+    <PlatformTarget>x64</PlatformTarget>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <UseWindowsForms>true</UseWindowsForms>
+    <UseWPF>true</UseWPF>
+    <CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="AutoCAD.NET" Version="24.0.0" PrivateAssets="all" />
+    <Reference Include="Microsoft.CSharp" />
+    <Compile Include="../BatchPlotPlus.AutoCAD/*.cs" Exclude="../BatchPlotPlus.AutoCAD/AssemblyInfo.cs;../BatchPlotPlus.AutoCAD/Plugin.cs;../BatchPlotPlus.AutoCAD/SmokeEntry.cs" LinkBase="Production" />
+  </ItemGroup>
+</Project>

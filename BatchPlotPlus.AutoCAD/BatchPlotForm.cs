@@ -55,7 +55,7 @@ namespace BatchPlotPlus.AutoCAD
         public BatchPlotForm(PluginState state)
         {
             _state = state;
-            Text = "批次輸出工具 Plus V1.4.4";
+            Text = "批次輸出工具 Plus V" + typeof(BatchPlotForm).Assembly.GetName().Version?.ToString(3);
             Font = new Font("Microsoft JhengHei UI", 9F, FontStyle.Regular, GraphicsUnit.Point);
             StartPosition = FormStartPosition.CenterScreen;
             FormBorderStyle = FormBorderStyle.FixedDialog;
@@ -158,7 +158,7 @@ namespace BatchPlotPlus.AutoCAD
 
             var dwgRules = Group("拆分規則", 8, 8, 350, 186);
             dwgRules.Controls.AddRange(new Control[] {
-                LabelAt("每個同名圖框各輸出一個 DWG。", 12, 24, 320, 22),
+                LabelAt("每個圖塊、矩形或封閉聚合線各輸出一個 DWG。", 12, 24, 326, 22),
                 LabelAt("有圖名屬性：使用圖名2-圖名1。", 12, 50, 320, 22),
                 LabelAt("無圖名屬性：使用自訂前綴＋排列順序。", 12, 76, 326, 22),
                 LabelAt("原點：圖框包圍框左下角設為 (0,0)。", 12, 102, 320, 22),
@@ -180,7 +180,7 @@ namespace BatchPlotPlus.AutoCAD
             var dwgNotice = Group("使用限制", 8, 202, 350, 98);
             dwgNotice.Controls.AddRange(new Control[] {
                 LabelAt("• 圖名屬性可以省略，會改用連號檔名。", 12, 24, 326, 22),
-                LabelAt("• 旋轉圖框會略過並寫入紀錄。", 12, 49, 326, 22),
+                LabelAt("• 框到的完整物件都輸出，不裁切或阻擋跨框物件。", 12, 49, 326, 22),
                 LabelAt("• 建議先測試 2 張，確認後再批次處理。", 12, 74, 326, 22)
             });
 
@@ -211,9 +211,8 @@ namespace BatchPlotPlus.AutoCAD
             _start.Text = split ? "開始拆分 DWG" : "開始輸出 PDF";
             _preview.Visible = !split;
             _preview.Enabled = !split;
-            if (split && !_frameBlock.Checked) _frameBlock.Checked = true;
-            _framePolyline.Enabled = !split;
-            _frameCustom.Enabled = !split;
+            _framePolyline.Enabled = true;
+            _frameCustom.Enabled = true;
             _matchingStatus.Text = MatchingStatus(_state.MatchingFrameCount);
         }
 

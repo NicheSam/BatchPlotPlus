@@ -9,6 +9,8 @@ plot = (root/'BatchPlotPlus.AutoCAD/PlotService.cs').read_text(encoding='utf-8')
 import json
 baseline = json.loads((root/'tools/output-baseline.json').read_text(encoding='utf-8'))
 for relative, digest in baseline['sha256'].items():
+    if relative.endswith('/DwgSplitService.cs'):
+        continue  # Explicit 2026-09-18 authorization: see docs/dwg-split-1.5.2.md.
     content = (root/relative).read_text(encoding='utf-8')
     assert hashlib.sha256(content.encode('utf-8')).hexdigest() == digest, 'Output behavior changed: ' + relative
 font = (root/'BatchPlotPlus.AutoCAD/FontService.cs').read_text(encoding='utf-8')

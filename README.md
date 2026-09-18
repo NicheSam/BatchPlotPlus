@@ -1,4 +1,13 @@
-# BatchPlotPlus 1.5.1
+# BatchPlotPlus 1.5.3
+
+**1.5.3：框到的物件直接輸出。** 依使用者最新要求，移除 1.5.2 的跨圖紙阻擋及其他圖框排除。DWG 矩形／封閉聚合線模式仍使用 WB 交叉選取；每個邊界各一檔，框到的完整物件都保留，不裁切跨框線段或圖塊。PDF 與共用輸出邏輯維持 1.4.4 基準。尚未發布 Release。
+
+使用方式及驗證界線見 [1.5.3 拆圖說明](docs/dwg-split-1.5.3.md)。[1.5.2 紀錄](docs/dwg-split-1.5.2.md) 的跨圖紙阻擋已取消，不適用目前版本。
+
+1.5.3 已完成 AutoCAD 2023 拆圖與輸出檔回讀測試，使用者亦確認可用。PDF 核心／共用邏輯比對及自動檢查通過，本版未新增 PDF 實際列印驗收。取得本版請使用目前原始碼與 `BuildRelease.ps1` 建置；下方 1.5.0 安裝包是舊版。
+
+<details>
+<summary>1.5.0–1.5.1 歷史下載與驗證紀錄</summary>
 
 **1.5.1 行為還原：** 批次 PDF、DWG 拆圖與共用輸出邏輯已完整還原至 1.4.4 基準，保留字型管理。後續出圖／拆圖只做 GUI／UIUX 優化，功能改動須另行確認。見 [還原說明](docs/restore-1.5.1.md) 與 [功能基準政策](docs/output-behavior-policy.md)。1.5.1 尚未發布 Release；以下 1.5.0 下載及修復紀錄為歷史版本，並非本次還原版。
 
@@ -19,6 +28,8 @@ AutoCAD 2023 已通過下列桌面測試；2021–2024 及 2025 原版至 Update
 詳細範圍與遷移方式見 [1.5 升級紀錄](docs/upgrade-1.5.md)，版本矩陣與其他驗證邊界見 [官方文件核對](docs/official-validation-1.5.md)。[1.5.0 Release 與安裝包](https://github.com/NicheSam/BatchPlotPlus/releases/tag/v1.5.0) 已發布；一般 Release 標記不代表所有環境已驗收，下方 1.4.4 截圖及歷史驗證保留作為既有版本紀錄。
 
 它把「批次輸出多頁 PDF」與「依圖框拆分 DWG」整合在同一個視窗與 Ribbon 頁籤，並以不儲存來源圖面變更為原則執行暫時性出圖處理。
+
+</details>
 
 <details>
 <summary>歷史介面截圖（1.4.4，未包含 1.5 字型管理）</summary>

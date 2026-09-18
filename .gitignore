@@ -30,3 +30,9 @@ __pycache__/
 *.dwl
 *.dwl2
 *.sv$
+
+# Local CAD fixtures and regression outputs
+*.dwg
+*.dxf
+SplitRuntimeChecks/results/
+SplitRuntimeChecks/source-results/

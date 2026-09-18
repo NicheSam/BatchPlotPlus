@@ -6,8 +6,8 @@ $logicProject = Join-Path $projectRoot "LogicTests\BatchPlotPlus.LogicTests.cspr
 $bundle = Join-Path $projectRoot "Bundle\BatchPlotPlus.bundle"
 $releaseRoot = Join-Path $projectRoot "release"
 $releaseBundle = Join-Path $releaseRoot "BatchPlotPlus.bundle"
-$releaseZip = Join-Path $releaseRoot "BatchPlotPlus-1.5.1.zip"
-$installerZip = Join-Path $releaseRoot "BatchPlotPlus-1.5.1-installer.zip"
+$releaseZip = Join-Path $releaseRoot "BatchPlotPlus-1.5.3.zip"
+$installerZip = Join-Path $releaseRoot "BatchPlotPlus-1.5.3-installer.zip"
 $installerStage = Join-Path $releaseRoot "_installer"
 $r24Output = Join-Path $projectRoot "BatchPlotPlus.AutoCAD\bin\Release\net48\BatchPlotPlus.AutoCAD.dll"
 $r25Output = Join-Path $projectRoot "BatchPlotPlus.AutoCAD\bin\Release\net8.0-windows\BatchPlotPlus.AutoCAD.dll"
@@ -51,7 +51,7 @@ New-Item -ItemType Directory -Path (Join-Path $installerStage "release") -Force 
 Copy-Item -LiteralPath (Join-Path $projectRoot "InstallOrUpdate.bat") -Destination $installerStage -Force
 Copy-Item -LiteralPath (Join-Path $projectRoot "InstallOrUpdate.ps1") -Destination $installerStage -Force
 Copy-Item -LiteralPath (Join-Path $projectRoot "MigrateCadFontAuto.ps1") -Destination $installerStage -Force
-Copy-Item -LiteralPath (Join-Path $projectRoot "docs\restore-1.5.1.md") -Destination (Join-Path $installerStage "RELEASE-NOTES.md") -Force
+Copy-Item -LiteralPath (Join-Path $projectRoot "docs\dwg-split-1.5.3.md") -Destination (Join-Path $installerStage "RELEASE-NOTES.md") -Force
 Copy-Item -LiteralPath (Join-Path $projectRoot "DiagnoseInstallation.bat") -Destination $installerStage -Force
 Copy-Item -LiteralPath (Join-Path $projectRoot "DiagnoseInstallation.ps1") -Destination $installerStage -Force
 Copy-Item -LiteralPath (Join-Path $projectRoot "VerifyUnblocked.ps1") -Destination $installerStage -Force
@@ -63,6 +63,6 @@ Remove-Item -LiteralPath $installerStage -Recurse -Force
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File (Join-Path $projectRoot "tools\test_installer_paths.ps1") -InstallerZip $installerZip
 if ($LASTEXITCODE -ne 0) { throw "Installer path tests failed." }
 
-Write-Output "BatchPlotPlus 1.5.1 release created."
+Write-Output "BatchPlotPlus 1.5.3 release created."
 Write-Output $releaseZip
 Write-Output $installerZip
