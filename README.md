@@ -1,8 +1,12 @@
-# BatchPlotPlus
+# BatchPlotPlus 1.5.0
 
-BatchPlotPlus 是以 AutoCAD 2021–2025（Windows 64 位元）為目標的繁體中文批次出圖工具。目前為 **1.5.0 升級候選版**，沿用原專案、產品識別與指令。2021–2024 及 2025 原版至 Update 1.3 已核對官方 API／執行環境基準；2025 Update 1.4 起仍待核實 .NET 10 宿主相容性。
+BatchPlotPlus 是整合批次 PDF、DWG 拆圖與字型管理的 AutoCAD 繁體中文外掛。**1.5.0 已發布**，沿用原專案、產品識別與指令，適用範圍以 Windows 64 位元 AutoCAD 為目標。
 
-## 1.5.0 升級候選版
+**[下載 1.5.0 安裝包](https://github.com/NicheSam/BatchPlotPlus/releases/download/v1.5.0/BatchPlotPlus-1.5.0-installer.zip)** · [發行說明](https://github.com/NicheSam/BatchPlotPlus/releases/tag/v1.5.0) · [SHA256](https://github.com/NicheSam/BatchPlotPlus/releases/download/v1.5.0/BatchPlotPlus-1.5.0-SHA256.txt)
+
+AutoCAD 2023 已通過下列桌面測試；2021–2024 及 2025 原版至 Update 1.3 已核對官方 API／執行環境基準。其他年版尚無實機驗收，2025 Update 1.4 起的 .NET 10 宿主相容性仍待核實。
+
+## 1.5.0 新增與修復
 
 - 原 Ribbon 新增一個「字型管理」按鈕（`BATCHFONTS`），需要時才開啟狀態、紀錄、啟停與快取管理。
 - 整合缺失 SHX 大字體替代模組，移除固定年份與語系路徑，保留自有替代檔紀錄。
@@ -14,9 +18,14 @@ BatchPlotPlus 是以 AutoCAD 2021–2025（Windows 64 位元）為目標的繁�
 
 它把「批次輸出多頁 PDF」與「依圖框拆分 DWG」整合在同一個視窗與 Ribbon 頁籤，並以不儲存來源圖面變更為原則執行暫時性出圖處理。
 
+<details>
+<summary>歷史介面截圖（1.4.4，未包含 1.5 字型管理）</summary>
+
 ![PDF 輸出頁籤 v1.4.4](ui-preview/PDF-tab-v1.4.4.png)
 
 ![拆分 DWG 頁籤 v1.4.4](ui-preview/DWG-tab-v1.4.4.png)
+
+</details>
 
 ## 主要功能
 
@@ -29,6 +38,9 @@ BatchPlotPlus 是以 AutoCAD 2021–2025（Windows 64 位元）為目標的繁�
 - 依圖框批次拆分 DWG，並提供先測試前 2 張的安全選項。
 - 自動載入「批次輸出工具」Ribbon 頁籤。
 - 字型管理可啟停缺失 SHX 大字體替代、查閱紀錄與清理本工具自有快取；不修改來源 DWG 字型樣式。
+
+<details>
+<summary>1.4.x 歷史更新紀錄</summary>
 
 ## 1.4.4 更新
 
@@ -70,6 +82,8 @@ BatchPlotPlus 是以 AutoCAD 2021–2025（Windows 64 位元）為目標的繁�
 - 有完整「圖名1／圖名2」屬性時，繼續使用 圖名2-圖名1 命名。
 - 圖框屬性不足或沒有屬性時，可使用自訂前綴和排序後連號，例如 圖1.dwg、圖2.dwg、圖3.dwg。
 - DWG 頁籤可獨立設定手動選取、逐列、逐欄及反轉順序。
+
+</details>
 
 ## 安裝
 
@@ -132,7 +146,8 @@ ui-preview/             PDF／DWG 頁籤畫面
 
 1.5.0 已通過雙框架建置、每框架 74 項邏輯檢查、安裝／UI／bundle 靜態檢查，以及 AutoCAD 2023 桌面載入、字型 GUI、兩頁 PDF 與出圖成功／失敗設定還原。建置有 NU1900 警告，線上套件弱點資料查核未完成。字型掃描與來源 DWG 不變已有證據；實際中文字形、首次開圖及旋轉 UCS 拆圖仍待實測。完整邊界見 [驗證文件](docs/official-validation-1.5.md)。
 
-以下為 **1.4.4 歷史驗證**，不直接作為 1.5.0 的驗收結果：
+<details>
+<summary>1.4.4 歷史驗證（不作為 1.5.0 驗收結果）</summary>
 
 - `net48` 與 `net8.0-windows` Release 建置：0 warnings、0 errors。
 - 37 項純邏輯測試。
@@ -148,6 +163,8 @@ ui-preview/             PDF／DWG 頁籤畫面
 - 實際 14 MB DWG 副本單頁輸出：彩色像素為 0。
 - 暫時性顏色處理前後物件狀態數量一致，未儲存來源 DWG 變更。
 
+</details>
+
 ## 限制與安全注意事項
 
 - 每頁仍由 AutoCAD 原生出圖引擎產生；大量圖框本來就需要逐頁圖形生成時間。
@@ -157,7 +174,7 @@ ui-preview/             PDF／DWG 頁籤畫面
 
 ## English
 
-BatchPlotPlus 1.5.0 is an upgrade candidate for 64-bit Windows AutoCAD. It retains batch PDF output and DWG splitting, and adds on-demand font management (`BATCHFONTS`) for missing BigFont SHX references. The module uses the host's chineset.shx, keeps an owned cache and does not rewrite source drawing styles. It is not a universal replacement for missing TTF or ordinary SHX fonts.
+BatchPlotPlus 1.5.0 is released for 64-bit Windows AutoCAD, with the compatibility and validation limits below. It retains batch PDF output and DWG splitting, and adds on-demand font management (`BATCHFONTS`) for missing BigFont SHX references. The module uses the host's chineset.shx, keeps an owned cache and does not rewrite source drawing styles. It is not a universal replacement for missing TTF or ordinary SHX fonts.
 
 Version 1.4.4 fixes the output preview scale and color model: fit-to-paper preview now uses a printable-area layout, entity and layer colors are sampled, and monochrome/grayscale plot styles are reflected in the preview. Version 1.4.3 remains the earlier installation and plotting workflow hardening release.
 
