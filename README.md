@@ -28,6 +28,7 @@ BatchPlotPlus 是以 AutoCAD 2021–2025（Windows 64 位元）為目標的繁�
 - 使用 `monochrome` 時，在未提交的 AutoCAD transaction 中暫時處理 True Color／命名樣式顏色，出圖後回復。
 - 依圖框批次拆分 DWG，並提供先測試前 2 張的安全選項。
 - 自動載入「批次輸出工具」Ribbon 頁籤。
+- 字型管理可啟停缺失 SHX 大字體替代、查閱紀錄與清理本工具自有快取；不修改來源 DWG 字型樣式。
 
 ## 1.4.4 更新
 
@@ -72,13 +73,15 @@ BatchPlotPlus 是以 AutoCAD 2021–2025（Windows 64 位元）為目標的繁�
 
 ## 安裝
 
-一般使用者不需要 Visual Studio 或 .NET SDK：
+已發布的 1.4.4 安裝包不包含本次字型管理功能。一般使用者安裝該版本不需要 Visual Studio 或 .NET SDK：
 
 1. 從 [GitHub Releases](https://github.com/NicheSam/BatchPlotPlus/releases/latest) 下載 `BatchPlotPlus-1.4.4-installer.zip`。
 2. 解壓縮全部內容。
 3. 完整關閉 AutoCAD。
 4. 雙擊 `InstallOrUpdate.bat`。
 5. 重新開啟 AutoCAD，使用「批次輸出工具」頁籤。
+
+若要使用本倉庫的 **1.5.0 候選版**，請依下方「建置」產生 `release/BatchPlotPlus-1.5.0-installer.zip`，再解壓縮並按上述步驟安裝。請先保存工作並關閉 AutoCAD。安裝器會備份並遷移已辨識的舊獨立 CadFontAuto；舊 FontFallbacks 替代檔仍保留。
 
 備用指令：
 
@@ -88,6 +91,7 @@ BatchPlotPlus 是以 AutoCAD 2021–2025（Windows 64 位元）為目標的繁�
 | `BATCHPDF` | 開啟 PDF 輸出頁面 |
 | `BATCHWB` | 開啟 DWG 拆分頁面 |
 | `BATCHPLOTDIAG` | 顯示目前載入的 DLL、版本及 AutoCAD 載入設定 |
+| `BATCHFONTS` | 1.5 新增：開啟字型管理、狀態與替代紀錄 |
 
 部署位置：
 
@@ -110,7 +114,7 @@ BatchPlotPlus 是以 AutoCAD 2021–2025（Windows 64 位元）為目標的繁�
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\BuildRelease.ps1
 ```
 
-`BuildRelease.ps1` 會建立 AutoCAD 2021–2024 使用的 .NET Framework 4.8 組件、AutoCAD 2025 使用的 .NET 8 組件，執行測試與 bundle 驗證，再產生 release 壓縮檔。
+`BuildRelease.ps1` 會建立 R24 的 .NET Framework 4.8 組件與 R25 的 .NET 8 組件，執行測試與 bundle 驗證，再產生 1.5.0 壓縮檔。2025 Update 1.4 起的宿主相容性仍待核實；建置通過不代表所有年版實機通過。
 
 ## 專案結構
 
@@ -126,7 +130,9 @@ ui-preview/             PDF／DWG 頁籤畫面
 
 ## 驗證狀態
 
-1.4.4 已通過：
+1.5.0 已通過雙框架建置、每框架 74 項邏輯檢查、安裝／UI／bundle 靜態檢查，以及 AutoCAD 2023 桌面載入、字型 GUI、兩頁 PDF 與出圖成功／失敗設定還原。建置有 NU1900 警告，線上套件弱點資料查核未完成。字型掃描與來源 DWG 不變已有證據；實際中文字形、首次開圖及旋轉 UCS 拆圖仍待實測。完整邊界見 [驗證文件](docs/official-validation-1.5.md)。
+
+以下為 **1.4.4 歷史驗證**，不直接作為 1.5.0 的驗收結果：
 
 - `net48` 與 `net8.0-windows` Release 建置：0 warnings、0 errors。
 - 37 項純邏輯測試。
@@ -151,8 +157,10 @@ ui-preview/             PDF／DWG 頁籤畫面
 
 ## English
 
-BatchPlotPlus 1.4.4 is a Traditional Chinese plug-in for AutoCAD 2021–2025 on 64-bit Windows. It provides a Ribbon tab and a two-tab WinForms interface for native multi-page PDF output and copy-safe DWG splitting. The bundle automatically loads a .NET Framework 4.8 assembly on AutoCAD 2021–2024 and a .NET 8 assembly on AutoCAD 2025.
+BatchPlotPlus 1.5.0 is an upgrade candidate for 64-bit Windows AutoCAD. It retains batch PDF output and DWG splitting, and adds on-demand font management (`BATCHFONTS`) for missing BigFont SHX references. The module uses the host's chineset.shx, keeps an owned cache and does not rewrite source drawing styles. It is not a universal replacement for missing TTF or ordinary SHX fonts.
 
 Version 1.4.4 fixes the output preview scale and color model: fit-to-paper preview now uses a printable-area layout, entity and layer colors are sampled, and monochrome/grayscale plot styles are reflected in the preview. Version 1.4.3 remains the earlier installation and plotting workflow hardening release.
 
-Download the installer package from [GitHub Releases](https://github.com/NicheSam/BatchPlotPlus/releases/latest), extract it, close AutoCAD, and run `InstallOrUpdate.bat`. AutoCAD 2021 and 2025 should still receive version-specific runtime smoke testing because those hosts are not installed in the current development environment.
+The existing 1.4.4 package on [GitHub Releases](https://github.com/NicheSam/BatchPlotPlus/releases/latest) does not include the new font module. To try 1.5.0, build this source with `BuildRelease.ps1`, extract `release/BatchPlotPlus-1.5.0-installer.zip`, save your work, close AutoCAD and run `InstallOrUpdate.bat`. The installer backs up and migrates the recognized standalone CadFontAuto module while preserving legacy FontFallbacks files.
+
+Official documentation supports the selected 2021 SDK/.NET Framework 4.8 baseline for AutoCAD 2021–2024 and the 2025 SDK/.NET 8 baseline through AutoCAD 2025 Update 1.3. Autodesk now lists .NET 10 for Update 1.4 onward; that host combination remains unverified. AutoCAD 2023 desktop loading, the font form, two-page PDF output and setting restoration passed. Other hosts, rotated-UCS splitting, first-open behavior and representative Chinese glyph appearance still need runtime acceptance. See the [upgrade record](docs/upgrade-1.5.md) and [official documentation review](docs/official-validation-1.5.md).
