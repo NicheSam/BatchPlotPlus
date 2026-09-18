@@ -30,7 +30,7 @@ Use the existing `InstallOrUpdate.bat` as the AutoCAD user, with all AutoCAD win
 
 Existing legacy `FontFallbacks` files and support paths are **preserved**. The new GUI does not own them: disabling or clearing the new module does not remove those older aliases. Review those separately if complete legacy substitution removal is desired. No global security or autoload settings are weakened.
 
-## Verification status (2026-09-17)
+## Verification status (2026-09-18)
 
 | Layer | Result |
 |---|---|
@@ -41,15 +41,17 @@ Existing legacy `FontFallbacks` files and support paths are **preserved**. The n
 | Installer paths | Passed: spaces, parentheses, ampersand, Chinese, exclamation; missing manifest correctly rejected |
 | AutoCAD 2023 font core | Two actual DWGs: scan, repeated-read cache, metadata invalidation, alias content hash and unchanged source bytes passed |
 | Complete DLL in Core Console | Failed during loading/entry with 0xC00000FD; not considered a PDF or desktop result |
-| Desktop GUI / PDF / DWG split | Not yet validated with the new DLL in a fresh desktop process |
-| AutoCAD 2021, 2022, 2024, 2025 desktop | Not executed; API build compatibility is not runtime certification |
+| Desktop GUI / PDF | AutoCAD 2023: installed 1.5.0 auto-load, real font form open/close, two-page PDF and independent page/text readback passed |
+| Normal / failed plot restoration | BACKGROUNDPLOT restored in both cases; monitored live settings and documents matched the pre-test snapshot |
+| DWG split | Rotated/translated UCS and output content still require runtime acceptance |
+| Other releases | Official SDK/runtime matrix checked; 2021/2022/2024 and 2025 through Update 1.3 have build/document evidence only. 2025 Update 1.4+ uses .NET 10 per current Autodesk docs and remains unverified |
 | First launch / Explorer double-click / profile switch | Implementation present where applicable; desktop validation pending |
 | Chinese glyph appearance / text width / PDF line breaks | Pending representative visual checks |
 | Network, encrypted/corrupt DWG, xrefs | Not certified; read errors are logged and opening is allowed to continue when the API returns an error |
 
-The installed desktop DLL was not replaced during these checks. The existing open user drawing was not operated on. Before/after guard checks for attempted isolated workers confirmed the watched original-user registry and protected files were unchanged. See the task verification record for worker cleanup status.
+The candidate was installed on 2026-09-18 after the user closed CAD. The old standalone font module was backed up and migrated. Desktop tests used a disposable drawing and the production installed DLL. Temporary trust paths and test template preferences were restored. Full registry comparison still contains startup defaults and UI layout differences; these were preserved rather than resetting the profile. The earlier stuck Core Console worker was terminated with user authorization.
 
-The package is an **upgrade candidate**, not an all-versions runtime-certified release. Keep the current installed version until desktop validation is performed. The Codex `cad-environment-guard` skill remains separate from this in-process implementation.
+The package remains an **upgrade candidate**, not an all-versions runtime-certified release. See [official documentation review](official-validation-1.5.md) for version, font, coordinate and output boundaries. The Codex `cad-environment-guard` skill remains separate from this in-process implementation.
 
 ## Reproducible checks
 

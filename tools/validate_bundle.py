@@ -111,7 +111,7 @@ def main() -> int:
     print("Bundle validation passed")
     print(f"R24 DLL bytes: {DLL_R24.stat().st_size}")
     print(f"R25 DLL bytes: {DLL_R25.stat().st_size}")
-    print("Hosts: AutoCAD 2021-2024 (.NET Framework 4.8) and AutoCAD 2025 (.NET 8)")
+    print("Build targets: AutoCAD 2021-2024 (.NET Framework 4.8), 2025 through Update 1.3 (.NET 8); 2025 Update 1.4+ host compatibility pending")
     print("UI: Traditional Chinese WinForms")
     print("Output: separate PDF, native multi-page PDF, and copy-safe split DWG")
     return 0
