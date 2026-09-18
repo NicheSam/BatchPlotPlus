@@ -46,7 +46,7 @@ foreach ($bundle in $found) {
         [xml]$manifest = Get-Content -LiteralPath $manifestPath -Raw -Encoding UTF8
         $version = $manifest.ApplicationPackage.AppVersion
         Add-Line "Version: $version"
-        if ($version -eq "1.5.0") { Add-Pass "Manifest version is 1.5.0." } else { Add-Warn "Manifest is not version 1.5.0." }
+        if ($version -eq "1.5.1") { Add-Pass "Manifest version is 1.5.1." } else { Add-Warn "Manifest is not version 1.5.1." }
         $bundleFiles = @(Get-ChildItem -LiteralPath $bundle -Recurse -File -ErrorAction Stop)
         $blockedFiles = New-Object System.Collections.Generic.List[System.IO.FileInfo]
         foreach ($bundleFile in $bundleFiles) {
@@ -146,7 +146,7 @@ if ($loaderKeys.Count -eq 0) {
         if ([string]::IsNullOrWhiteSpace($loader)) {
             Add-Fail "Loader registration has no LOADER value: $($loaderKey.Name)"
         } elseif ($loader.StartsWith($trustedBundle, [StringComparison]::OrdinalIgnoreCase) -and (Test-Path -LiteralPath $loader)) {
-            Add-Pass "Loader points to the trusted v1.5.0 bundle: $loader"
+            Add-Pass "Loader points to the trusted v1.5.1 bundle: $loader"
         } else {
             Add-Fail "Loader points to a missing or legacy DLL: $loader"
         }

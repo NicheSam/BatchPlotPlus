@@ -51,8 +51,6 @@ namespace BatchPlotPlus.AutoCAD
             var result = value.Trim();
             foreach (var invalid in Path.GetInvalidFileNameChars()) result = result.Replace(invalid, '_');
             result = result.Trim('.', ' ');
-            if (Regex.IsMatch(result.Split('.')[0].TrimEnd(), @"^(CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])$", RegexOptions.IgnoreCase))
-                result = "_" + result;
             return string.IsNullOrWhiteSpace(result) ? "圖面" : result;
         }
 
@@ -83,7 +81,7 @@ namespace BatchPlotPlus.AutoCAD
         {
             if (total <= 0 || completed <= 0) return 0;
             if (completed >= total) return 100;
-            return (int)((long)completed * 100 / total);
+            return completed * 100 / total;
         }
 
         public static string RequiredPlotStyleExtension(bool colorDependent) => colorDependent ? ".ctb" : ".stb";

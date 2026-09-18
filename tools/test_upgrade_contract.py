@@ -1,11 +1,16 @@
 from pathlib import Path
+import hashlib
 import xml.etree.ElementTree as ET
 
 root = Path(__file__).resolve().parents[1]
 plot = (root/'BatchPlotPlus.AutoCAD/PlotService.cs').read_text(encoding='utf-8')
-assert 'null, 1, true, outputPath' in plot, 'PDF BeginDocument must use one device copy'
-assert plot.index('var plotInfos = new List<PlotInfo>()') < plot.index('foreach (var frame in frames) plotInfos.Add(')
-assert 'TemporarySetting.Run(' in plot and 'document.Database.TileMode' in plot
+# Output behavior is frozen to the user-approved 1.4.4 baseline.
+# Digests are generated from Git commit 43db0bf, normalizing line endings only.
+import json
+baseline = json.loads((root/'tools/output-baseline.json').read_text(encoding='utf-8'))
+for relative, digest in baseline['sha256'].items():
+    content = (root/relative).read_text(encoding='utf-8')
+    assert hashlib.sha256(content.encode('utf-8')).hexdigest() == digest, 'Output behavior changed: ' + relative
 font = (root/'BatchPlotPlus.AutoCAD/FontService.cs').read_text(encoding='utf-8')
 assert 'AutoCAD 2023' not in font and 'R24.2' not in font and '"cht"' not in font
 assert 'File.Replace(pending, SettingsPath, null)' in font

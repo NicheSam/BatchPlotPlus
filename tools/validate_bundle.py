@@ -36,8 +36,8 @@ def main() -> int:
     dwg_text = DWG.read_text(encoding="utf-8")
     ribbon_text = RIBBON.read_text(encoding="utf-8")
 
-    if manifest.attrib.get("AppVersion") != "1.5.0":
-        raise ValueError("Manifest AppVersion is not 1.5.0")
+    if manifest.attrib.get("AppVersion") != "1.5.1":
+        raise ValueError("Manifest AppVersion is not 1.5.1")
     require(manifest_text, [
         'SeriesMin="R24.0" SeriesMax="R24.3"',
         'ModuleName="./Contents/R24/BatchPlotPlus.AutoCAD.dll"',
@@ -53,7 +53,7 @@ def main() -> int:
         raise ValueError("Manifest must use explicit startup and command load attributes, not ambiguous LoadReasons")
     require(project_text, [
         "<TargetFrameworks>net48;net8.0-windows</TargetFrameworks>",
-        "<Version>1.5.0</Version>",
+        "<Version>1.5.1</Version>",
         "<UseWindowsForms>true</UseWindowsForms>",
         "<UseWPF>true</UseWPF>",
         '<PackageReference Include="AutoCAD.NET" Version="24.0.0"',

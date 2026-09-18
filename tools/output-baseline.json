@@ -1,0 +1,8 @@
+{
+  "commit": "43db0bf9139bc91228c0d25259c0077c0f2fa7c6",
+  "sha256": {
+    "BatchPlotPlus.AutoCAD/PlotService.cs": "9b73459c6502b1637f8f6192153c578dbf86c42ffb12bb3e5d01051a1e8837ad",
+    "BatchPlotPlus.AutoCAD/DwgSplitService.cs": "ae547c33b71bf5b7cff4302673cf43828761560864b7caa02cb67416cb53b41d",
+    "BatchPlotPlus.AutoCAD/BatchLogic.cs": "3632e0dcfd7180f8e09f7bf1d2662b5409a2596c7cc15c7b4dd97b97da635850"
+  }
+}

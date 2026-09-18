@@ -1,4 +1,6 @@
-# BatchPlotPlus 1.5.0
+# BatchPlotPlus 1.5.1
+
+**1.5.1 行為還原：** 批次 PDF、DWG 拆圖與共用輸出邏輯已完整還原至 1.4.4 基準，保留字型管理。後續出圖／拆圖只做 GUI／UIUX 優化，功能改動須另行確認。見 [還原說明](docs/restore-1.5.1.md) 與 [功能基準政策](docs/output-behavior-policy.md)。1.5.1 尚未發布 Release；以下 1.5.0 下載及修復紀錄為歷史版本，並非本次還原版。
 
 BatchPlotPlus 是整合批次 PDF、DWG 拆圖與字型管理的 AutoCAD 繁體中文外掛。**1.5.0 已發布**，沿用原專案、產品識別與指令，適用範圍以 Windows 64 位元 AutoCAD 為目標。
 
@@ -173,6 +175,8 @@ ui-preview/             PDF／DWG 頁籤畫面
 - 本 repository 尚未指定開源授權；未經另外授權，不代表可任意重新散布或修改。
 
 ## English
+
+Version 1.5.1 restores PDF, DWG splitting and shared output logic to the exact 1.4.4 source baseline while retaining font management. Further output changes are limited to GUI/UX unless separately approved. The 1.5.0 links and changes below describe the previous release; a 1.5.1 Release is not yet published.
 
 BatchPlotPlus 1.5.0 is released for 64-bit Windows AutoCAD, with the compatibility and validation limits below. It retains batch PDF output and DWG splitting, and adds on-demand font management (`BATCHFONTS`) for missing BigFont SHX references. The module uses the host's chineset.shx, keeps an owned cache and does not rewrite source drawing styles. It is not a universal replacement for missing TTF or ordinary SHX fonts.
 

@@ -10,7 +10,7 @@ using Autodesk.AutoCAD.Colors;
 using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.Geometry;
 using Autodesk.AutoCAD.PlottingServices;
-using AcApp = Autodesk.AutoCAD.ApplicationServices.Core.Application;
+using AcApp = Autodesk.AutoCAD.ApplicationServices.Application;
 
 namespace BatchPlotPlus.AutoCAD
 {
@@ -61,7 +61,6 @@ namespace BatchPlotPlus.AutoCAD
         {
             if (PlotFactory.ProcessPlotState != ProcessPlotState.NotPlotting)
                 throw new InvalidOperationException("AutoCAD 目前正在執行其他出圖工作，請稍後再試。");
-            if (!document.Database.TileMode) throw new InvalidOperationException("\u8acb\u5148\u5207\u63db\u5230\u6a21\u578b\u7a7a\u9593\u518d\u8f38\u51fa PDF\u3002");
             Directory.CreateDirectory(state.OutputDirectory);
 
             var frames = CollectFrames(document.Database, state);
@@ -70,10 +69,10 @@ namespace BatchPlotPlus.AutoCAD
             if (state.Copies > 1)
                 frames = Enumerable.Range(0, state.Copies).SelectMany(_ => frames).ToList();
 
+            var oldBackgroundPlot = Convert.ToInt32(AcApp.GetSystemVariable("BACKGROUNDPLOT"), CultureInfo.InvariantCulture);
+            AcApp.SetSystemVariable("BACKGROUNDPLOT", 0);
             var totalTimer = Stopwatch.StartNew();
-            TemporarySetting.Run(
-                () => Convert.ToInt32(AcApp.GetSystemVariable("BACKGROUNDPLOT"), CultureInfo.InvariantCulture),
-                value => AcApp.SetSystemVariable("BACKGROUNDPLOT", value), 0, () =>
+            try
             {
                 var media = ResolveMedia(document.Database, state);
                 if (state.OutputMode == OutputMode.MergedPdf)
@@ -94,8 +93,12 @@ namespace BatchPlotPlus.AutoCAD
                     }
                     document.Editor.WriteMessage("\n已完成 " + number + " 個個別 PDF 檔案。");
                 }
-            }, message => { PluginDiagnostics.Write(message); document.Editor.WriteMessage("\n" + message); });
-            document.Editor.WriteMessage("\nPDF 輸出總耗時：" + totalTimer.Elapsed.TotalSeconds.ToString("0.0", CultureInfo.InvariantCulture) + " 秒。");
+            }
+            finally
+            {
+                AcApp.SetSystemVariable("BACKGROUNDPLOT", oldBackgroundPlot);
+                document.Editor.WriteMessage("\nPDF 輸出總耗時：" + totalTimer.Elapsed.TotalSeconds.ToString("0.0", CultureInfo.InvariantCulture) + " 秒。");
+            }
         }
 
         internal static List<FrameInfo> CollectFrames(Database database, PluginState state, bool ignoreSelectionAndRange = false)
@@ -236,7 +239,7 @@ namespace BatchPlotPlus.AutoCAD
                 frames = Enumerable.Range(0, state.Copies).SelectMany(_ => frames).ToList();
             var items = BuildPreviewItems(document, state, frames);
             using (var form = new PlotPreviewForm(items))
-                Autodesk.AutoCAD.ApplicationServices.Application.ShowModalDialog(form);
+                AcApp.ShowModalDialog(form);
         }
 
         internal static List<PlotPreviewItem> BuildPreviewItems(Document document, PluginState state, IList<FrameInfo> frames)
@@ -519,10 +522,9 @@ namespace BatchPlotPlus.AutoCAD
                 var layoutId = layoutDictionary.GetAt("Model");
                 var layout = (Layout)transaction.GetObject(layoutId, OpenMode.ForRead);
                 var infoValidators = new List<PlotInfoValidator>();
-                var plotInfos = new List<PlotInfo>();
+                var plotInfos = frames.Select(frame => CreatePlotInfo(layout, frame, state, media, worldToDisplay, infoValidators)).ToList();
                 try
                 {
-                    foreach (var frame in frames) plotInfos.Add(CreatePlotInfo(layout, frame, state, media, worldToDisplay, infoValidators));
                     monochromeOverride = BeginMonochromeOverride(document, state);
                     using (var engine = PlotFactory.CreatePublishEngine())
                     using (var progress = new PlotProgressDialog(false, frames.Count, true))
@@ -538,7 +540,7 @@ namespace BatchPlotPlus.AutoCAD
                         progress.OnBeginPlot();
                         progress.IsVisible = true;
                         engine.BeginPlot(progress, null);
-                        engine.BeginDocument(plotInfos[0], document.Name, null, 1, true, outputPath);
+                        engine.BeginDocument(plotInfos[0], document.Name, null, frames.Count, true, outputPath);
                         for (var index = 0; index < plotInfos.Count; index++)
                         {
                             var sheetTimer = Stopwatch.StartNew();
@@ -549,12 +551,10 @@ namespace BatchPlotPlus.AutoCAD
                             progress.UpperSheetProgressRange = 100;
                             progress.SheetProgressPos = 0;
                             using (var page = new PlotPageInfo())
-                            {
                                 engine.BeginPage(page, plotInfos[index], index == plotInfos.Count - 1, null);
-                                engine.BeginGenerateGraphics(null);
-                                engine.EndGenerateGraphics(null);
-                                engine.EndPage(null);
-                            }
+                            engine.BeginGenerateGraphics(null);
+                            engine.EndGenerateGraphics(null);
+                            engine.EndPage(null);
                             progress.SheetProgressPos = 100;
                             progress.OnEndSheet();
                             progress.PlotProgressPos = BatchLogic.ProgressPercent(index + 1, plotInfos.Count);
@@ -694,8 +694,6 @@ namespace BatchPlotPlus.AutoCAD
         private static PlotInfo CreatePlotInfo(Layout layout, FrameInfo frame, PluginState state, string media, Matrix3d worldToDisplay, ICollection<PlotInfoValidator> infoValidators)
         {
             var settings = new PlotSettings(layout.ModelType);
-            try
-            {
             settings.CopyFrom(layout);
             var validator = PlotSettingsValidator.Current;
             validator.SetPlotConfigurationName(settings, state.Device, media);
@@ -773,12 +771,11 @@ namespace BatchPlotPlus.AutoCAD
             catch (System.Exception exception)
             {
                 infoValidator?.Dispose();
+                info.OverrideSettings?.Dispose();
                 info.Dispose();
                 var style = string.IsNullOrWhiteSpace(state.PlotStyle) ? "\u7121" : state.PlotStyle;
                 throw new InvalidOperationException("AutoCAD \u9a57\u8b49\u51fa\u5716\u8a2d\u5b9a\u5931\u6557\u3002\u5716\u6846\uff1a" + frame.FileBase + "\uff1b\u88dd\u7f6e\uff1a" + state.Device + "\uff1b\u7d19\u5f35\uff1a" + state.Paper + "\uff1b\u6a23\u5f0f\uff1a" + style + "\uff1b\u7bc4\u570d\uff1a" + FormatWindow(window) + "\u3002", exception);
             }
-            }
-            catch { settings.Dispose(); throw; }
         }
 
         private static string FormatWindow(PlotWindowBounds window)
