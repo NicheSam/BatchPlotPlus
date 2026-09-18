@@ -10,7 +10,7 @@ BatchPlotPlus 是以 AutoCAD 2021–2025（Windows 64 位元）為目標的繁�
 - 已通過雙框架建置、每框架 74 項邏輯檢查、安裝包檢查及兩張真實 DWG 的字型核心測試。
 - AutoCAD 2023 已完成正式 DLL 自動載入、字型 GUI、兩頁 PDF、成功／失敗參數還原與字型掃描驗證；拆圖、首次開圖及其他年版實機仍待驗收。
 
-詳細範圍與遷移方式見 [1.5 升級紀錄](docs/upgrade-1.5.md)，版本矩陣與其他驗證邊界見 [官方文件核對](docs/official-validation-1.5.md)。1.5 套件尚未發布到 GitHub Releases；下方 1.4.4 截圖及歷史驗證保留作為既有版本紀錄。
+詳細範圍與遷移方式見 [1.5 升級紀錄](docs/upgrade-1.5.md)，版本矩陣與其他驗證邊界見 [官方文件核對](docs/official-validation-1.5.md)。[1.5.0 Release 與安裝包](https://github.com/NicheSam/BatchPlotPlus/releases/tag/v1.5.0) 已發布；一般 Release 標記不代表所有環境已驗收，下方 1.4.4 截圖及歷史驗證保留作為既有版本紀錄。
 
 它把「批次輸出多頁 PDF」與「依圖框拆分 DWG」整合在同一個視窗與 Ribbon 頁籤，並以不儲存來源圖面變更為原則執行暫時性出圖處理。
 
@@ -73,15 +73,15 @@ BatchPlotPlus 是以 AutoCAD 2021–2025（Windows 64 位元）為目標的繁�
 
 ## 安裝
 
-已發布的 1.4.4 安裝包不包含本次字型管理功能。一般使用者安裝該版本不需要 Visual Studio 或 .NET SDK：
+一般使用者安裝 1.5.0 不需要 Visual Studio 或 .NET SDK：
 
-1. 從 [GitHub Releases](https://github.com/NicheSam/BatchPlotPlus/releases/latest) 下載 `BatchPlotPlus-1.4.4-installer.zip`。
+1. 從 [GitHub Releases](https://github.com/NicheSam/BatchPlotPlus/releases/tag/v1.5.0) 下載 `BatchPlotPlus-1.5.0-installer.zip`。
 2. 解壓縮全部內容。
 3. 完整關閉 AutoCAD。
 4. 雙擊 `InstallOrUpdate.bat`。
 5. 重新開啟 AutoCAD，使用「批次輸出工具」頁籤。
 
-若要使用本倉庫的 **1.5.0 候選版**，請依下方「建置」產生 `release/BatchPlotPlus-1.5.0-installer.zip`，再解壓縮並按上述步驟安裝。請先保存工作並關閉 AutoCAD。安裝器會備份並遷移已辨識的舊獨立 CadFontAuto；舊 FontFallbacks 替代檔仍保留。
+若要自行建置，請依下方「建置」產生 `release/BatchPlotPlus-1.5.0-installer.zip`。安裝前請保存工作並關閉 AutoCAD。安裝器會備份並遷移已辨識的舊獨立 CadFontAuto；舊 FontFallbacks 替代檔仍保留。
 
 備用指令：
 
@@ -161,6 +161,6 @@ BatchPlotPlus 1.5.0 is an upgrade candidate for 64-bit Windows AutoCAD. It retai
 
 Version 1.4.4 fixes the output preview scale and color model: fit-to-paper preview now uses a printable-area layout, entity and layer colors are sampled, and monochrome/grayscale plot styles are reflected in the preview. Version 1.4.3 remains the earlier installation and plotting workflow hardening release.
 
-The existing 1.4.4 package on [GitHub Releases](https://github.com/NicheSam/BatchPlotPlus/releases/latest) does not include the new font module. To try 1.5.0, build this source with `BuildRelease.ps1`, extract `release/BatchPlotPlus-1.5.0-installer.zip`, save your work, close AutoCAD and run `InstallOrUpdate.bat`. The installer backs up and migrates the recognized standalone CadFontAuto module while preserving legacy FontFallbacks files.
+Download `BatchPlotPlus-1.5.0-installer.zip` from the [1.5.0 Release](https://github.com/NicheSam/BatchPlotPlus/releases/tag/v1.5.0), extract it, save your work, close AutoCAD and run `InstallOrUpdate.bat`. Building with `BuildRelease.ps1` remains optional. The installer backs up and migrates the recognized standalone CadFontAuto module while preserving legacy FontFallbacks files. The normal Release designation does not imply all runtime acceptance checks are complete.
 
 Official documentation supports the selected 2021 SDK/.NET Framework 4.8 baseline for AutoCAD 2021–2024 and the 2025 SDK/.NET 8 baseline through AutoCAD 2025 Update 1.3. Autodesk now lists .NET 10 for Update 1.4 onward; that host combination remains unverified. AutoCAD 2023 desktop loading, the font form, two-page PDF output and setting restoration passed. Other hosts, rotated-UCS splitting, first-open behavior and representative Chinese glyph appearance still need runtime acceptance. See the [upgrade record](docs/upgrade-1.5.md) and [official documentation review](docs/official-validation-1.5.md).
